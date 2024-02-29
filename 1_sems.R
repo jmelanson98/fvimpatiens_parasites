@@ -169,7 +169,7 @@ bform <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.par +
 fit.bombus <- brm(bform, spec.net,
                   cores=ncores,
                   iter = (10^4),
-                  chains =1,
+                  chains =3,
                   thin=1,
                   init=0,
                   open_progress = FALSE,
