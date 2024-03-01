@@ -5,44 +5,24 @@
 ## builds the models, and fits the models in brms. The model outputs
 ## are saved as tables, and chain diagnostic plots created.
 
-
-## setwd('~/Dropbox (University of Oregon)/pnw_survey')
-
-##jesse wd 
-setwd("C:/Users/mycol/Dropbox (University of Oregon)/pnw_survey")
-
-library(ggplot2)
-library(tidyverse)
-library(tidybayes)
-library(ggthemes)
-library(ggtext)
-library(stringr)
-
-## Script for plotting all of the important explanatory variables.
+setwd("~/Dropbox (University of Oregon)/coast_bees_parasites")
 
 ## plotting based on tutorial:
 ## https://www.andrewheiss.com/blog/2021/11/10/ame-bayes-re-guide/#different-kinds-of-averCanopyBin-predictions-with-multilevel-models
 
 rm(list=ls())
-setwd("analyses/parasites")
-
 source("src/ggplotThemes.R")
 source("src/init.R")
 source("src/misc.R")
-source("src/writeResultsTable.R")
-source("src/makeMultiLevelData.R")
-
-## set to the number of cores you would like the models to run on
-ncores <- 1
 
 ## load model results and data
-load(file="saved/CrithidiaFitBombusMod_coast_phylo.Rdata")
+load(file="saved/CrithidiaFitAllBee_coast.Rdata")
 
 ## ***********************************************************************
 ## scatterplot of canopy cover v. dbh, separated by thins 
 ## ***********************************************************************
-#have to do this before centering variables below 
-stands <- orig.spec[orig.spec$Weights == 1, ]
+# have to do this before centering variables below 
+stands <- orig.spec[!duplicated(orig.spec$StandRoundYear), ]
 
 #plot w thins highlighted
 standsplot <- stands %>% 
@@ -63,10 +43,6 @@ standsplot
 
 ggsave(standsplot, file="figures/canopyDBH.pdf",
        height=2, width=4)
-
-# #
-# thins <- stands[stands$ThinStatus == "Y",]
-# range(thins$MeanCanopy, na.rm=TRUE)
 
 ## ***********************************************************************
 ## descriptive bar charts

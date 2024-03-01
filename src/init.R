@@ -1,25 +1,23 @@
 ## models
 library(brms)
-library(bayesplot)
-library(tidybayes)
-library(ggplot2)
+library(bayestestR)
 
+## general
+library(tidyverse)
 
 ## plotting
-library(tidyr)
-library(dplyr)
-library(viridis)
+library(ggplot2)
+library(tidyverse)
 library(tidybayes)
+library(ggthemes)
+library(ggtext)
+library(stringr)
+library(viridis)
 library(gridExtra)
-library(grid)
-library(scales)
-library(RColorBrewer)
 
-library(rstantools)
-library(performance)
-library(bayestestR)
-library(see)
-
+## trees
+library(phytools)
+library(ggtree)
 
 save.dir0 <- "saved/"
 if(!dir.exists(save.dir0)) {

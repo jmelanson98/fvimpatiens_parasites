@@ -183,9 +183,9 @@ write.ms.table(fit.bombus, "Crithidia_allbee_coast")
 save(fit.bombus, spec.net, orig.spec,
      file="saved/CrithidiaFitAllBee_coast.Rdata")
 
-plot.res(fit.bombus, "Crithidia_allbee_coast")
-
 load(file="saved/CrithidiaFitAllBee_coast.Rdata")
+
+plot.res(fit.bombus, "Crithidia_allbee_coast")
 
 summary(fit.bombus)
 

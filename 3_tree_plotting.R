@@ -3,9 +3,6 @@ setwd("~/Dropbox (University of Oregon)/coast_bees_parasites")
 ## This script plots the phylogeny and accociated traits.
 
 rm(list=ls())
-library(phytools)
-library(dplyr)
-library(ggtree)
 
 load("data/spec_net_coast.Rdata")
 source("src/init.R")
