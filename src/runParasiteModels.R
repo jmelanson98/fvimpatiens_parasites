@@ -1,6 +1,6 @@
 
 runParasiteModels <- function(spec.data,
-                              species.group, parasite,
+                              parasite,
                               xvars){
 
   formula.parasite  <- as.formula(paste(

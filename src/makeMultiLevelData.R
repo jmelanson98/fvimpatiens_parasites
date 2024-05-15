@@ -1,7 +1,7 @@
 
-makeDataMultiLevel <- function(indiv.data, site.col, year.col="Year"){
+makeDataMultiLevel <- function(indiv.data, site.col, yr.col){
     ## split data by year
-    indiv.data.split <- split(indiv.data, indiv.data[, year.col])
+    indiv.data.split <- split(indiv.data, indiv.data[, yr.col])
 
     ## maybe in the future this will need to be an sapply
     out.indiv.data <- lapply(indiv.data.split, addWeightCol,
