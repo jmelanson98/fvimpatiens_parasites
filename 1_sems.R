@@ -91,7 +91,7 @@ formula.bee.div <- formula(bombus_shannon_diversity | weights(Weights)~
                                (1|sample_pt)
                            )
 
-formula.bee.abund <- formula(bombus_abundance | weights(Weights)~
+formula.bee.abund <- formula(native_bee_abundance | weights(Weights)~
                                floral_abundance + floral_diversity +
                                  prop_blueberry + prop_edge + landscape_shdi +
                                julian_date + I(julian_date^2) + site +
@@ -110,7 +110,7 @@ formula.imp.abund <- formula(impatiens_abundance | weights(Weights)~
 ## **********************************************************
 
 xvars.fv <- c("bombus_shannon_diversity",
-              "bombus_abundance",
+              "native_bee_abundance",
               "impatiens_abundance",
               "floral_abundance",
               "floral_diversity",
@@ -121,6 +121,51 @@ xvars.fv <- c("bombus_shannon_diversity",
               "(1|sample_pt)",
               "(1|subsite)"
                  )
+## **********************************************************
+## Without parasite model
+## **********************************************************
+bf.fdiv <- bf(formula.flower.div, family="student")
+bf.fabund <- bf(formula.flower.abund, family = "student")
+bf.bdiv <- bf(formula.bee.div, family="hurdle_lognormal")
+bf.babund <- bf(formula.bee.abund, family = "hurdle_poisson")
+bf.iabund <- bf(formula.imp.abund, family = "hurdle_poisson")
+
+## convert to brms format
+bform <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund +
+  set_rescor(FALSE)
+
+## run model
+fit.bombus.nopar <- brm(bform, fvimp_brmsdf,
+                  cores=ncores,
+                  iter = (10^4),
+                  chains =1,
+                  thin=1,
+                  init=0,
+                  open_progress = FALSE,
+                  control = list(adapt_delta = 0.999,
+                                 stepsize = 0.001,
+                                 max_treedepth = 20)
+)
+
+write.ms.table(fit.bombus.nopar, "NoParasiteModel_fv")
+save(fit.bombus.nopar, fvimp_brmsdf, orig.spec,
+     file="saved/NoParasiteModel_fv.Rdata")
+
+load(file="saved/NoParasiteModel_fv.Rdata")
+
+plot.res(fit.bombus.nopar, "NoParasiteModel_fv")
+
+summary(fit.bombus.nopar)
+
+bayes_R2(fit.bombus.nopar)
+
+plot(pp_check(fit.bombus, resp="floraldiversity"))
+plot(pp_check(fit.bombus, resp="floralabundance"))
+plot(pp_check(fit.bombus, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus, resp="bombusshannondiversity"))
+plot(pp_check(fit.bombus, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus, resp = "hascrithidia"))
+
 
 ## **********************************************************
 ## Crithidia 
@@ -168,10 +213,11 @@ bayes_R2(fit.bombus)
 
 plot(pp_check(fit.bombus, resp="floraldiversity"))
 plot(pp_check(fit.bombus, resp="floralabundance"))
-plot(pp_check(fit.bombus, resp="bombusabundance"))
+plot(pp_check(fit.bombus, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus, resp = "impatiensabundance"))
 plot(pp_check(fit.bombus, resp = "hascrithidia"))
+
 
 ## **********************************************************
 ## Apicystis
@@ -216,7 +262,7 @@ bayes_R2(fit.bombus.api)
 
 plot(pp_check(fit.bombus.api, resp="floraldiversity"))
 plot(pp_check(fit.bombus.api, resp="floralabundance"))
-plot(pp_check(fit.bombus.api, resp="bombusabundance"))
+plot(pp_check(fit.bombus.api, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.api, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.api, resp = "impatiensabundance"))
 plot(pp_check(fit.bombus.api, resp = "apicystis"))
@@ -264,7 +310,7 @@ bayes_R2(fit.bombus.nbom)
 
 plot(pp_check(fit.bombus.nbom, resp="floraldiversity"))
 plot(pp_check(fit.bombus.nbom, resp="floralabundance"))
-plot(pp_check(fit.bombus.nbom, resp="bombusabundance"))
+plot(pp_check(fit.bombus.nbom, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.nbom, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.nbom, resp = "impatiensabundance"))
 plot(pp_check(fit.bombus.nbom, resp = "nbombii"))
@@ -314,7 +360,7 @@ bayes_R2(fit.bombus.any)
 
 plot(pp_check(fit.bombus.any, resp="floraldiversity"))
 plot(pp_check(fit.bombus.any, resp="floralabundance"))
-plot(pp_check(fit.bombus.any, resp="bombusabundance"))
+plot(pp_check(fit.bombus.any, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.any, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.any, resp = "impatiensabundance"))
 plot(pp_check(fit.bombus.any, resp = "any_parasite"))
