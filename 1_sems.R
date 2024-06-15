@@ -12,6 +12,7 @@ rm(list=ls())
 ncores <- 1
 
 fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", row.names = 1)
+negbin_brmsdf <- read.csv("data/negativebinomial_brmsdf.csv", row.names = 1)
 source("src/init.R")
 source("src/misc.R")
 source("src/writeResultsTable.R")
@@ -52,10 +53,10 @@ variables.to.log.p1 <- c()
 ## log variables here
 ## ********************************************************
 
-orig.spec <- fvimp_brmsdf
+orig.spec <- negbin_brmsdf
 
 ## Make SEM weights and standardize data.
-fvimp_brmsdf <- prepDataSEM(spec.data = fvimp_brmsdf,
+negbin_brmsdf <- prepDataSEM(spec.data = negbin_brmsdf,
                             vars_transect = vars_transect,
                             vars_transect_sr = vars_transect_sr)
 
@@ -68,15 +69,13 @@ fvimp_brmsdf <- prepDataSEM(spec.data = fvimp_brmsdf,
 ## define all the formulas for the different parts of the models
 
 formula.flower.div <- formula(floral_diversity | weights(Weights) ~
-                                  julian_date + I(julian_date^2) +
-                                  site + #note that 'site' variable is more of a region
+                                  poly(julian_date, 2) +
                                   (1|sample_pt)
                               )
 
 ## flower abund with simpson div
 formula.flower.abund <- formula(floral_abundance | weights(Weights) ~
-                                    julian_date + I(julian_date^2) +
-                                    site +
+                                    poly(julian_date, 2) +
                                     (1|sample_pt)
                                 )
 
@@ -86,22 +85,22 @@ formula.flower.abund <- formula(floral_abundance | weights(Weights) ~
 
 formula.bee.div <- formula(bombus_shannon_diversity | weights(Weights)~
                              floral_diversity + floral_abundance +
-                              julian_date + I(julian_date^2) + site +
-                               prop_blueberry + prop_edge + landscape_shdi +
+                              poly(julian_date, 2) + landscape_shdi +
+                               prop_blueberry + prop_edge +
                                (1|sample_pt)
                            )
 
 formula.bee.abund <- formula(native_bee_abundance | weights(Weights)~
                                floral_abundance + floral_diversity +
-                                 prop_blueberry + prop_edge + landscape_shdi +
-                               julian_date + I(julian_date^2) + site +
+                               prop_blueberry + prop_edge + landscape_shdi + 
+                               poly(julian_date, 2) +
                                  (1|sample_pt)  
                              )
 
 formula.imp.abund <- formula(impatiens_abundance | weights(Weights)~
                                floral_abundance + floral_diversity +
-                               prop_blueberry + prop_edge + landscape_shdi +
-                               julian_date + I(julian_date^2) + site +
+                               prop_blueberry + prop_edge + landscape_shdi + 
+                               poly(julian_date, 2) +
                                (1|sample_pt)  
 )
 
@@ -115,11 +114,11 @@ xvars.fv <- c("bombus_shannon_diversity",
               "floral_abundance",
               "floral_diversity",
               "prop_blueberry",
-              "julian_date",
-              "I(julian_date^2)",
+              "poly(julian_date, 2)",
               "final_id",
               "(1|sample_pt)",
-              "(1|subsite)"
+              "(1|subsite)",
+              "offset(number_screened)"
                  )
 ## **********************************************************
 ## Without parasite model
@@ -159,12 +158,11 @@ summary(fit.bombus.nopar)
 
 bayes_R2(fit.bombus.nopar)
 
-plot(pp_check(fit.bombus, resp="floraldiversity"))
-plot(pp_check(fit.bombus, resp="floralabundance"))
-plot(pp_check(fit.bombus, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus, resp="bombusshannondiversity"))
-plot(pp_check(fit.bombus, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.nopar, resp="floraldiversity"))
+plot(pp_check(fit.bombus.nopar, resp="floralabundance"))
+plot(pp_check(fit.bombus.nopar, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.nopar, resp="bombusshannondiversity"))
+plot(pp_check(fit.bombus.nopar, resp = "impatiensabundance"))
 
 
 ## **********************************************************
@@ -225,17 +223,17 @@ plot(pp_check(fit.bombus, resp = "hascrithidia"))
 #ran this without "subsite" as random effect in parasite model, and without "site" as fixed effect
 #in bombus abundance/diversity models. Will rerun!
 
-formula.api <- runParasiteModels(fvimp_brmsdf,
-                                 "apicystis", 
+formula.api <- runParasiteModels(negbin_brmsdf,
+                                 "spp_apicystis", 
                                  xvars.fv)
 
 ## convert to brms format
-bf.par.api <- bf(formula.api, family="bernoulli")
+bf.par.api <- bf(formula.api, family="negbinomial")
 bform.api <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund + bf.par.api +
   set_rescor(FALSE)
 
 ## run model
-fit.bombus.api <- brm(bform.api, fvimp_brmsdf,
+fit.bombus.api <- brm(bform.api, negbin_brmsdf,
                       cores=ncores,
                       iter = (10^4),
                       chains =1,
@@ -248,13 +246,13 @@ fit.bombus.api <- brm(bform.api, fvimp_brmsdf,
 )
 
 
-write.ms.table(fit.bombus.api, "Apicystis_allbee_fv")
-save(fit.bombus.api, fvimp_brmsdf, orig.spec,
-     file = "saved/ApicystisAllBee_fv.Rdata")
+write.ms.table(fit.bombus.api, "Apicystis_allbee_fv_negbinomial")
+save(fit.bombus.api, negbin_brmsdf, orig.spec,
+     file = "saved/ApicystisAllBee_fv_negbinomial.Rdata")
 
-load(file = "saved/ApicystisAllBee_fv.Rdata")
+load(file = "saved/ApicystisAllBee_fv_negbinomial.Rdata")
 
-plot.res(fit.bombus.api, "Apicystis_allbee_fv")
+plot.res(fit.bombus.api, "Apicystis_allbee_fv_negbinomial")
 
 summary(fit.bombus.api)
 
@@ -265,7 +263,7 @@ plot(pp_check(fit.bombus.api, resp="floralabundance"))
 plot(pp_check(fit.bombus.api, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.api, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.api, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.api, resp = "apicystis"))
+plot(pp_check(fit.bombus.api, resp = "sppapicystis"))
 
 ## **********************************************************
 ## Nosema bombi
@@ -286,7 +284,7 @@ bform.nbom <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund + bf.par.nb
 fit.bombus.nbom <- brm(bform.nbom, fvimp_brmsdf,
                       cores=ncores,
                       iter = (10^4),
-                      chains =1,
+                      chains =2,
                       thin=1,
                       init=0,
                       open_progress = FALSE,

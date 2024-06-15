@@ -69,6 +69,7 @@ prepParasiteWeights <- function(spec.data){
   ## to keep it in the models
   spec.data$any_parasite[is.na(spec.data$any_parasite)] <- 0
   spec.data$cbombii[is.na(spec.data$cbombii)] <- 0
+  spec.data$nbombii[is.na(spec.data$nbombii)] <- 0
   spec.data$hascrithidia[is.na(spec.data$hascrithidia)] <- 0
   spec.data$apicystis[is.na(spec.data$apicystis)] <- 0
   #spec.data$Year <- as.factor(spec.data$Year)
@@ -142,13 +143,26 @@ prepDataSEM <-
   ## original intention was to keep stan from dropping data for
   ## site-level models, but weight is 0 for parasite models.
   
-  print("Number of successful parasite screenings")
-  print(sum(spec.data$apidae, na.rm = TRUE))
-  spec.data <- prepParasiteWeights(spec.data)
-  print("Number of of individuals with WeightsPar == 1, should be the same as above")
-  print(sum(spec.data$WeightsPar))
-  print("Final dim of data after adding WeightsPar")
-  print(dim(spec.data))
+  #print("Number of successful parasite screenings")
+  #print(sum(spec.data$apidae, na.rm = TRUE))
+  #spec.data <- prepParasiteWeights(spec.data)
+  #print("Number of of individuals with WeightsPar == 1, should be the same as above")
+  #print(sum(spec.data$WeightsPar))
+  #print("Final dim of data after adding WeightsPar")
+  #print(dim(spec.data))
+  
+  ##moved the following code here from prepParasiteWeights because the prepParasiteWeights
+  ##function is not necessary for the neg binomial dataset (I set weightsPar already)
+  
+  spec.data$spp_anyparasite[is.na(spec.data$spp_anyparasite)] <- 0
+  spec.data$spp_cbombi[is.na(spec.data$spp_cbombi)] <- 0
+  spec.data$spp_nbombi[is.na(spec.data$spp_nbombi)] <- 0
+  spec.data$spp_anycrithidia[is.na(spec.data$spp_anycrithidia)] <- 0
+  spec.data$spp_apicystis[is.na(spec.data$spp_apicystis)] <- 0
+  spec.data$number_screened[is.na(spec.data$number_screened)] <- 0
+  spec.data$weightsPar[is.na(spec.data$weightsPar)] <- 0
+  spec.data$final_id[is.na(spec.data$final_id)] <- "none"
+  spec.data$final_id = as.factor(spec.data$final_id)
   
   return(spec.data)
 }

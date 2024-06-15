@@ -4,7 +4,7 @@ runParasiteModels <- function(spec.data,
                               xvars){
 
   formula.parasite  <- as.formula(paste(
-    paste(parasite, "| weights(WeightsPar)"),  #+ trials(1)
+    paste(parasite, "| weights(weightsPar)"),  #+ trials(1)
     paste(xvars,
           collapse=" + "),
     sep=" ~ "))
