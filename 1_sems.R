@@ -120,57 +120,13 @@ xvars.fv <- c("bombus_shannon_diversity",
               "(1|subsite)",
               "offset(number_screened)"
                  )
-## **********************************************************
-## Without parasite model
-## **********************************************************
-bf.fdiv <- bf(formula.flower.div, family="student")
-bf.fabund <- bf(formula.flower.abund, family = "student")
-bf.bdiv <- bf(formula.bee.div, family="hurdle_lognormal")
-bf.babund <- bf(formula.bee.abund, family = "hurdle_poisson")
-bf.iabund <- bf(formula.imp.abund, family = "hurdle_poisson")
-
-## convert to brms format
-bform <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund +
-  set_rescor(FALSE)
-
-## run model
-fit.bombus.nopar <- brm(bform, fvimp_brmsdf,
-                  cores=ncores,
-                  iter = (10^4),
-                  chains =1,
-                  thin=1,
-                  init=0,
-                  open_progress = FALSE,
-                  control = list(adapt_delta = 0.999,
-                                 stepsize = 0.001,
-                                 max_treedepth = 20)
-)
-
-write.ms.table(fit.bombus.nopar, "NoParasiteModel_fv")
-save(fit.bombus.nopar, fvimp_brmsdf, orig.spec,
-     file="saved/NoParasiteModel_fv.Rdata")
-
-load(file="saved/NoParasiteModel_fv.Rdata")
-
-plot.res(fit.bombus.nopar, "NoParasiteModel_fv")
-
-summary(fit.bombus.nopar)
-
-bayes_R2(fit.bombus.nopar)
-
-plot(pp_check(fit.bombus.nopar, resp="floraldiversity"))
-plot(pp_check(fit.bombus.nopar, resp="floralabundance"))
-plot(pp_check(fit.bombus.nopar, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.nopar, resp="bombusshannondiversity"))
-plot(pp_check(fit.bombus.nopar, resp = "impatiensabundance"))
-
 
 ## **********************************************************
 ## Crithidia 
 ## **********************************************************
 
-formula.crithidia <-  runParasiteModels(fvimp_brmsdf,
-                                       "hascrithidia", 
+formula.crithidia <-  runParasiteModels(negbin_brmsdf,
+                                       "spp_anycrithidia", 
                                        xvars.fv)
 
 bf.fdiv <- bf(formula.flower.div, family="student")
@@ -180,12 +136,12 @@ bf.babund <- bf(formula.bee.abund, family = "hurdle_poisson")
 bf.iabund <- bf(formula.imp.abund, family = "hurdle_poisson")
 
 ## convert to brms format
-bf.par <- bf(formula.crithidia, family="bernoulli")
+bf.par <- bf(formula.crithidia, family="negbinomial")
 bform <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund + bf.par +
     set_rescor(FALSE)
 
 ## run model
-fit.bombus <- brm(bform, fvimp_brmsdf,
+fit.bombus <- brm(bform, negbin_brmsdf,
                   cores=ncores,
                   iter = (10^4),
                   chains =1,
@@ -197,13 +153,13 @@ fit.bombus <- brm(bform, fvimp_brmsdf,
                                  max_treedepth = 20)
                   )
 
-write.ms.table(fit.bombus, "Crithidia_allbee_fv")
-save(fit.bombus, fvimp_brmsdf, orig.spec,
-     file="saved/CrithidiaFitAllBee_fv.Rdata")
+write.ms.table(fit.bombus, "Crithidia_allbee_fv_negbinomial")
+save(fit.bombus, negbin_brmsdf, orig.spec,
+     file="saved/CrithidiaFitAllBee_fv_negbinomial.Rdata")
 
-load(file="saved/CrithidiaFitAllBee_fv.Rdata")
+load(file="saved/CrithidiaFitAllBee_fv_negbinomial.Rdata")
 
-plot.res(fit.bombus, "Crithidia_allbee_fv")
+plot.res(fit.bombus, "Crithidia_allbee_fv_negbinomial")
 
 summary(fit.bombus)
 
@@ -214,7 +170,7 @@ plot(pp_check(fit.bombus, resp="floralabundance"))
 plot(pp_check(fit.bombus, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus, resp = "hascrithidia"))
+plot(pp_check(fit.bombus, resp = "sppanycrithidia"))
 
 
 ## **********************************************************
@@ -251,8 +207,10 @@ save(fit.bombus.api, negbin_brmsdf, orig.spec,
      file = "saved/ApicystisAllBee_fv_negbinomial.Rdata")
 
 load(file = "saved/ApicystisAllBee_fv_negbinomial.Rdata")
+load(file = "saved/ApicystisAllBee_fv.Rdata")
 
 plot.res(fit.bombus.api, "Apicystis_allbee_fv_negbinomial")
+
 
 summary(fit.bombus.api)
 
@@ -268,23 +226,21 @@ plot(pp_check(fit.bombus.api, resp = "sppapicystis"))
 ## **********************************************************
 ## Nosema bombi
 ## **********************************************************
-#ran this without "subsite" as random effect in parasite model, and without "site" as fixed effect
-#in bombus abundance/diversity models. Will rerun!
 
-formula.nbom <- runParasiteModels(fvimp_brmsdf,
-                                 "nbombii", 
+formula.nbom <- runParasiteModels(negbin_brmsdf,
+                                 "spp_nbombi", 
                                  xvars.fv)
 
 ## convert to brms format
-bf.par.nbom <- bf(formula.nbom, family="bernoulli")
+bf.par.nbom <- bf(formula.nbom, family="negbinomial")
 bform.nbom <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund + bf.par.nbom +
   set_rescor(FALSE)
 
 ## run model
-fit.bombus.nbom <- brm(bform.nbom, fvimp_brmsdf,
+fit.bombus.nbom <- brm(bform.nbom, negbin_brmsdf,
                       cores=ncores,
                       iter = (10^4),
-                      chains =2,
+                      chains =1,
                       thin=1,
                       init=0,
                       open_progress = FALSE,
@@ -294,13 +250,13 @@ fit.bombus.nbom <- brm(bform.nbom, fvimp_brmsdf,
 )
 
 
-write.ms.table(fit.bombus.nbom, "Nbombi_allbee_fv")
-save(fit.bombus.nbom, fvimp_brmsdf, orig.spec,
-     file = "saved/NbombiAllBee_fv.Rdata")
+write.ms.table(fit.bombus.nbom, "Nbombi_allbee_fv_negbinomial")
+save(fit.bombus.nbom, negbin_brmsdf, orig.spec,
+     file = "saved/NbombiAllBee_fv_negbinomial.Rdata")
 
-load(file = "saved/NbombiAllBee_fv.Rdata")
+load(file = "saved/NbombiAllBee_fv_negbinomial.Rdata")
 
-plot.res(fit.bombus.nbom, "Nbombi_allbee_fv")
+plot.res(fit.bombus.nbom, "Nbombi_allbee_fv_negbinomial")
 
 summary(fit.bombus.nbom)
 
@@ -311,27 +267,23 @@ plot(pp_check(fit.bombus.nbom, resp="floralabundance"))
 plot(pp_check(fit.bombus.nbom, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.nbom, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.nbom, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.nbom, resp = "nbombii"))
+plot(pp_check(fit.bombus.nbom, resp = "sppnbombi"))
 
 ## **********************************************************
 ## Any parasite
 ## **********************************************************
-#ran this without "subsite" as random effect in parasite model, and without "site" as fixed effect
-#in bombus abundance/diversity models: saved as AnyParasiteAllBee_fv.Rdata and Anyparasite_allbee_fv
-# also ran WITH both of the above modifications: saved as AnyParasiteAllBeeExtraEffects_fv.Rdata and 
-# Anyparasite_allbee_extraeffects_fv
 
-formula.any <- runParasiteModels(fvimp_brmsdf,
-                                  "any_parasite", 
+formula.any <- runParasiteModels(negbin_brmsdf,
+                                  "spp_anyparasite", 
                                   xvars.fv)
 
 ## convert to brms format
-bf.par.any <- bf(formula.any, family="bernoulli")
+bf.par.any <- bf(formula.any, family="negbinomial")
 bform.any <-  bf.fdiv + bf.fabund + bf.babund + bf.bdiv + bf.iabund + bf.par.any +
   set_rescor(FALSE)
 
 ## run model
-fit.bombus.any <- brm(bform.any, fvimp_brmsdf,
+fit.bombus.any <- brm(bform.any, negbin_brmsdf,
                        cores=ncores,
                        iter = (10^4),
                        chains =1,
@@ -344,13 +296,13 @@ fit.bombus.any <- brm(bform.any, fvimp_brmsdf,
 )
 
 
-write.ms.table(fit.bombus.any, "Anyparasite_allbee_extraeffects_fv")
-save(fit.bombus.any, fvimp_brmsdf, orig.spec,
-     file = "saved/AnyParasiteAllBeeExtraEffects_fv.Rdata")
+write.ms.table(fit.bombus.any, "Anyparasite_allbee_fv_negbinomial")
+save(fit.bombus.any, negbin_brmsdf, orig.spec,
+     file = "saved/AnyParasiteAllBee_fv_negbinomial.Rdata")
 
-load(file = "saved/AnyParasiteAllBeeExtraEffects_fv.Rdata")
+load(file = "saved/AnyParasiteAllBee_fv_negbinomial.Rdata")
 
-plot.res(fit.bombus.any, "AnyParasiteAllBeeExtraEffects_allbee_fv")
+plot.res(fit.bombus.any, "AnyParasiteAllBee_allbee_fv_negbinomial")
 
 summary(fit.bombus.any)
 
@@ -361,4 +313,4 @@ plot(pp_check(fit.bombus.any, resp="floralabundance"))
 plot(pp_check(fit.bombus.any, resp="nativebeeabundance"))
 plot(pp_check(fit.bombus.any, resp="bombusshannondiversity"))
 plot(pp_check(fit.bombus.any, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.any, resp = "any_parasite"))
+plot(pp_check(fit.bombus.any, resp = "spp_anyparasite"))
