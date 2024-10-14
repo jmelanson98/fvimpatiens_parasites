@@ -18,6 +18,7 @@ library(gridExtra)
 ## trees
 library(phytools)
 library(ggtree)
+library(ape)
 
 save.dir0 <- "saved/"
 if(!dir.exists(save.dir0)) {
