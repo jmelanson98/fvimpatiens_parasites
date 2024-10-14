@@ -1,12 +1,4 @@
 
-## Prepares the data for model fitting (standardizes continuous
-## variables, creates dummy variables to be used as weights to all
-## different subsets of data to be used in different model levels),
-## builds the models, and fits the models in brms. The model outputs
-## are saved as tables, and chain diagnostic plots created.
-
-setwd("~/Dropbox (University of Oregon)/coast_bees_parasites")
-
 ## plotting based on tutorial:
 ## https://www.andrewheiss.com/blog/2021/11/10/ame-bayes-re-guide/#different-kinds-of-averCanopyBin-predictions-with-multilevel-models
 
@@ -16,207 +8,22 @@ source("src/init.R")
 source("src/misc.R")
 
 ## load model results and data
-load(file="saved/CrithidiaFitAllBee_coast.Rdata")
+load(file="saved/AllModels_fv_bernoulli_phylo_prior.Rdata")
 
 ## ***********************************************************************
-## scatterplot of canopy cover v. dbh, separated by thins 
+## exploratory plots / bar graphs
 ## ***********************************************************************
-# have to do this before centering variables below 
-stands <- orig.spec[!duplicated(orig.spec$StandRoundYear), ]
-
-#plot w thins highlighted
-standsplot <- stands %>% 
-  ggplot(aes(x=DomTreeDiam_cm, y=MeanCanopy, color=ThinStatus)) +
-  geom_point() + 
-  scale_color_manual(values = c("Y" = "gold", "N" = "maroon"),
-                     labels=c('Not thinned', 'Thinned'),
-                     name="Management history") +
-  labs(x="Dominant tree class DBH (cm)", y="Canopy openness") +
-  xlim(0,75) +
-  theme_classic()+
-  theme(
-    axis.text.x = element_text(color="black"),
-    axis.text.y = element_text(color="black"),
-    axis.ticks = element_line(color = "black"))
-
-standsplot
-
-ggsave(standsplot, file="figures/canopyDBH.pdf",
-       height=2, width=4)
-
-## ***********************************************************************
-## descriptive bar charts
-## ***********************************************************************
-
-#binning by canopy 
-orig.spec$CanopyBin <- cut(orig.spec$MeanCanopy,
-                     breaks = c(0, 25, 75, 100), 
-                     include.lowest = T, right = F)
-#reminder 2 self that canopy is unintuitive and 0-25 is actually lowest
-
-orig.spec <- orig.spec[!is.na(orig.spec$CanopyBin),]
-
-####bee genus bars
-orig.spec <- orig.spec %>%
-  filter(Genus == 'Bombus')
-# 
-# #need to summarize flowers per n type of stand in each category
-# #find stands per stand type 
-# standstype <- orig.spec %>% 
-#   group_by(age, PlantGenusSpecies) %>% 
-#   summarise(count = n())
-# #only 61 stands?? 
-# 
-# #bees per stand type
-# beesper <- orig.spec %>% 
-#   group_by(age, GenusSpecies) %>% 
-#   summarise(count = n())
-# 
-# 
-# #modifying to show prop of total
-# bombus.spp.bar <- ggplot(summary, 
-#                          aes(y = fct_reorder(GenusSpecies, avg, .desc = TRUE),
-#                              x = avg)) + 
-#   geom_bar(stat = 'identity',
-#            aes(fill = factor(age)), position = "dodge") +
-#   scale_fill_manual(values=c('darkgreen', 'gold', 'lightblue'),
-#                     name = "Canopy closure", 
-#                     labels=c('Closed', 'Intermediate', 'Open')) +
-#   theme_classic() +
-#   theme(axis.text.y = element_text(angle = 0, hjust = 1, 
-#                                    face ='italic', color = 'black'),
-#         axis.title.y = element_text(size=14),
-#         axis.title.x = element_text(size=14),
-#         text = element_text(size=14)) +
-#   labs(y=expression(paste('Species')), x='Average individuals 
-#        collected per stand type')
-# 
-# bombus.spp.bar
-# 
-# 
-# ggsave(bombus.spp.bar, file="figures/bombusSppbar.pdf",
-#        height=5, width=7.5)
-
-
-#ok nevermind let's try canopy and not treediam actually. binning... 
-orig.spec$CanopyBin <- cut(orig.spec$MeanCanopy,
-                     breaks = c(0, 25, 75, 100), 
-                     include.lowest = T, right = F)
-#reminder 2 self that canopy is unintuitive and 0-25 is closed
-
-orig.spec <- orig.spec[!is.na(orig.spec$CanopyBin),]
-
-####bee genus bars
-orig.spec <- orig.spec %>%
-  filter(Genus == 'Bombus')
-
-
-#per canopy type mean and sd of veg abund/diversity
-closed <- orig.spec[orig.spec$CanopyBin %in% c("[0,25)"),]
-intermed <- orig.spec[orig.spec$CanopyBin %in% c("[25,75)"),]
-open <- orig.spec[orig.spec$CanopyBin %in% c("[75,100]"),]
-
-
-
-
-#need to summarize individuals per n type of stand in each category
-#find stands per stand type 
-standstype <- orig.spec %>% 
-  group_by(CanopyBin) %>% 
-  summarise(count = n_distinct(Stand))
-#bees per stand type
-beesper <- orig.spec %>% 
-  group_by(CanopyBin, GenusSpecies) %>% 
-  summarise(count = n())
-#add total stands in each stand type, + divide 
-summary <- beesper %>% 
-  left_join(standstype, by="CanopyBin") %>% 
-  mutate(avg = count.x/count.y) 
-
-
-#modifying to show prop of total
-bombus.spp.bar <- ggplot(summary, 
-                         aes(y = fct_reorder(GenusSpecies, avg, .desc = TRUE),
-                             x = avg)) + 
-  geom_bar(stat = 'identity',
-           aes(fill = factor(CanopyBin)), position = "dodge") +
-  scale_fill_manual(values=c('#004D40', '#FFC107', 'lightblue'),
-                    name = "Canopy closure", 
-                    labels=c('Closed', 'Intermediate', 'Open')) +
-  theme_classic() +
-  theme(axis.text.y = element_text(angle = 0, hjust = 1, 
-                                   face ='italic', color = 'black'),
-        axis.text.x = element_text(color="black"),
-        axis.title.y = element_text(size=14),
-        axis.title.x = element_text(size=14),
-        axis.ticks = element_line(color = "black"),
-        text = element_text(size=14)) +
-  labs(y=expression(paste('Species')), x='Average individuals
-       collected per canopy type')
-
-bombus.spp.bar
-
-ggsave(bombus.spp.bar, file="figures/bombusSppbar.pdf",
-       height=3, width=5)
-
-#plant stats 
-
-#plants per stand type
-# plantsper <- orig.spec %>% 
-#   group_by(CanopyBin, PlantGenusSpecies) %>% 
-#   summarise(count = n())
-# 
-# #add total stands in each stand type, + divide 
-# summary <- plantsper %>% 
-#   left_join(standstype, by="CanopyBin") %>% 
-#   mutate(avg = count.x/count.y) 
-# 
-# plant.spp.bar <- ggplot(summary, 
-#                          aes(y = fct_reorder(PlantGenusSpecies, avg, .desc = TRUE),
-#                              x = avg)) + 
-#   geom_bar(stat = 'identity',
-#            aes(fill = factor(CanopyBin)), position = "dodge") +
-#   theme_classic() +
-#   theme(axis.text.y = element_text(angle = 0, hjust = 1, 
-#                                    face ='italic', color = 'black'),
-#         axis.title.y = element_text(size=14),
-#         axis.title.x = element_text(size=14),
-#         text = element_text(size=14)) +
-#   labs(y=expression(paste('Species')), x='Average individuals 
-#        collected per stand type')
-# 
-# plant.spp.bar
-# 
-
-# 
-# #this vers shows total collected and not per stand 
-# bombus.tot.bar <- ggplot(orig.spec, aes(y = fct_infreq(GenusSpecies))) + 
-#   geom_bar(stat = 'count',
-#            aes(fill = factor(age)), position = "dodge") +
-#   scale_fill_manual(values=c('darkorange4', 'darkorange', 'gold')) +
-#   theme_classic() +
-#   theme(axis.text.y = element_text(angle = 0, hjust = 1, 
-#                                    face ='italic', color = 'black'),
-#         axis.title.y = element_text(size=16),
-#         axis.title.x = element_text(size=16),
-#         text = element_text(size=16)) +
-#   labs(y=expression(paste('Species')), x='Number of \n Collected Individuals') +
-#   geom_text(stat='count', aes(label=..count..), hjust=-0.5) + 
-#   xlim(0, 100)
-# 
-# bombus.tot.bar
-# 
-# ggsave(bombus.tot.bar, file="figures/bombusTotbar.pdf",
-#        height=5, width=7.5)
 
 ##parasite counts
+orig.spec$bberry_bin <- cut(orig.spec$prop_blueberry,
+                        breaks = c(0, .25, .75, 1), 
+                        include.lowest = T, right = F)
 parasite.count.table <- orig.spec %>%
-  filter(Apidae == 1) %>%
-  select(SpecimenID, ApicystisSpp, AscosphaeraSpp, CrithidiaBombi, CrithidiaExpoeki, 
-         CrithidiaSpp, NosemaBombi, NosemaCeranae, ParasitePresence, ParasiteRichness, 
-         CanopyBin) %>%
-  pivot_longer(cols=c(ApicystisSpp, AscosphaeraSpp, CrithidiaBombi,
-                      CrithidiaSpp, CrithidiaExpoeki, NosemaCeranae, NosemaBombi),
+  filter(apidae == 1) %>%
+  select(barcode_id, apicystis, ascosphaera, cbombii, cexpoeki, 
+         crithidiaspp, nbombii, nceranae, any_parasite, prop_blueberry) %>%
+  pivot_longer(cols=c(apicystis, ascosphaera, cbombii,
+                      crithidiaspp, cexpoeki, nceranae, nbombii, any_parasite),
                names_to = 'ParasiteName', values_to = 'HasParasite') %>%
   filter(HasParasite == 1)
 
@@ -224,10 +31,10 @@ parasite.count.table <- orig.spec %>%
 parasite.hist <- parasite.count.table %>%
   ggplot(aes(y= fct_infreq(ParasiteName))) + 
   geom_bar(stat = 'count',
-           aes(fill = factor(CanopyBin)), position = "dodge") +
+           aes(fill = factor(bberry_bin)), position = "dodge") +
   scale_fill_manual(values=c('#004D40', '#FFC107', 'lightblue'),
-                    name = "Canopy closure", 
-                    labels=c('Closed', 'Intermediate', 'Open')) +
+                    name = "Proportion blueberry", 
+                    labels=c('Low', 'Medium', 'High')) +
   theme_classic() +
   theme(axis.text.y = element_text(angle = 0, hjust = 1, color = "black"),
         axis.title.y = element_text(size=16),
@@ -236,765 +43,983 @@ parasite.hist <- parasite.count.table %>%
         text = element_text(size=16)) +
   labs(y='Parasite', x='Number of \n Infected Individuals') +
   xlim(0,75) +
-  scale_y_discrete(labels=c("NosemaCeranae"=expression(italic('Nosema ceranae')),
-                            "NosemaBombi"=expression(italic('Nosema bombi')),
-                            'AscosphaeraSpp'=expression(paste(italic('Ascosphaera'), ' spp.')),
-                            'ApicystisSpp'=expression(paste(italic('Apicystis'), ' spp.')),
-                            "CrithidiaBombi"=expression(italic('Crithidia bombi')),
-                            "CrithidiaExpoeki"=expression(italic('Crithidia expoeki')),
-                            'CrithidiaSpp'=expression(paste(italic('Crithidia'), ' spp.')),
+  scale_y_discrete(labels=c("nceranae"=expression(italic('Nosema ceranae')),
+                            "nbombii"=expression(italic('Nosema bombi')),
+                            'ascosphaera'=expression(paste(italic('Ascosphaera'), ' spp.')),
+                            'apicystis'=expression(paste(italic('Apicystis'), ' spp.')),
+                            "cbombii"=expression(italic('Crithidia bombi')),
+                            "cexpoeki"=expression(italic('Crithidia expoeki')),
+                            "crithidiaspp"=expression(paste(italic('Crithidia'), ' spp.')),
                             parse=TRUE))  + labs(fill = "Canopy openness")
 
 parasite.hist
 
-#for geom text count: 1, 7, 18, 32, 54, 55, 149
-
-ggsave(parasite.hist, file="figures/coastparasiteSppHist.pdf",
-       height=3, width=5)
-
 
 ## ***********************************************************************
-## prepping for newdata draws 
+## prepping for newdata draws -- vegetation & native bee abundance models
 ## ***********************************************************************
+new.net <- fvimp_brmsdf[fvimp_brmsdf$Subset == TRUE, ]
+new.orig <- orig.spec[fvimp_brmsdf$Subset == TRUE, ]
 
-new.net <- spec.net[spec.net$Weights == 1, ]
-new.orig <- orig.spec[orig.spec$Weights == 1, ]
+# calculate all conditional effects
+all.cond.effects <- conditional_effects(fit.bombus.all.prior.nointeractions)
 
-## ***********************************************************************
-## forest age ~ floral diversity
-## ***********************************************************************
+#create axis values for standardized variables
+labs.doy <- (pretty(new.orig$julian_date, n=8))
+axis.doy <-  standardize.axis(labs.doy,
+                              new.orig$julian_date)
 
-newdata.fl.div <- tidyr::crossing(MeanCanopy =
-                                    seq(min(new.net$MeanCanopy, na.rm = TRUE),
-                                        max(new.net$MeanCanopy, na.rm = TRUE),
-                                        length.out=10),
-                                  Stand="100:Camp",
-                                  Year = "2021",
-                                  ThinStatus = "Y",
-                                  DoyStart = mean(new.net$DoyStart, na.rm = TRUE)
-)
+labs.fdiv <- (pretty(new.orig$floral_diversity, n=8))
+axis.fdiv <-  standardize.axis(labs.fdiv,
+                              new.orig$floral_diversity)
 
-pred_fldiv <- fit.bombus %>%
-  epred_draws(newdata = newdata.fl.div,
-              resp = "VegDiversity",
-              allow_new_levels = TRUE)
+labs.fabun <- (pretty(new.orig$floral_abundance, n=8))
+axis.fabun <-  standardize.axis(labs.fabun,
+                               new.orig$floral_abundance)
 
-labs.fl.div <- (pretty(c(0, new.orig$MeanCanopy), n=8))
-axis.fl.div <-  standardize.axis(labs.fl.div,
-                                 new.orig$MeanCanopy)
+labs.blueberry <- (pretty(new.orig$prop_blueberry, n=9))
+axis.blueberry <-  standardize.axis(labs.blueberry,
+                                    new.orig$prop_blueberry)
 
-veg.div.stand <- ggplot(pred_fldiv, aes(x = MeanCanopy,
-                                        y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Blues") +
-  labs(y = "Flowering plant diversity", x = "Canopy openness",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
-  theme_ms() +
-  geom_point(data=new.net,
-             aes(x=MeanCanopy, y=VegDiversity, color = ThinStatus), cex=2) +
-  scale_color_manual(values=c("#000000","#999999"))+
-  scale_x_continuous(
-    labels = labs.fl.div,
-    breaks = axis.fl.div) 
+labs.edge <- (pretty(new.orig$prop_edge, n=8))
+axis.edge <-  standardize.axis(labs.edge,
+                               new.orig$prop_edge)
 
-veg.div.stand
-
-ggsave(veg.div.stand, file="figures/vegdiv_stand.pdf",
-       height=4, width=5)
-
-## ***********************************************************************
-## forest age and floral abundance
-## ***********************************************************************
-
-labs.fl.ab <- (pretty(c(0, new.orig$MeanCanopy), n=8))
-axis.fl.ab <-  standardize.axis(labs.fl.ab,
-                                new.orig$MeanCanopy)
-
-newdata.fl.ab <- tidyr::crossing(MeanCanopy =
-                                   seq(min(new.net$MeanCanopy, na.rm=TRUE),
-                                       max(new.net$MeanCanopy, na.rm=TRUE),
-                                       length.out=10),
-                                 Stand="100:Camp",
-                                 Year = "2021",
-                                 DoyStart = mean(new.net$DoyStart, na.rm=TRUE)
-)
-
-pred_flab <- fit.bombus %>%
-  epred_draws(newdata = newdata.fl.ab,
-              resp = "VegAbundance",
-              allow_new_levels = TRUE)
-
-flower.ab.stand <- ggplot(pred_flab, aes(x = MeanCanopy,
-                                         y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Blues") +
-  scale_x_continuous(
-    breaks = axis.fl.ab,
-    labels = labs.fl.ab) +
-  labs(y = str_wrap("Flowering plant abundance (log)", width =20),
-       x = "Canopy openness",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
-  theme_ms() +
-  geom_point(data=new.net,
-             aes(x=MeanCanopy, y=VegAbundance, color = ThinStatus), cex=2) +
-  scale_color_manual(values=c("#000000","#999999")) 
-
-flower.ab.stand
-
-ggsave(flower.ab.stand, file="figures/vegabund_stand.pdf",
-       height=4, width=5)
 
 ## ***********************************************************************
 ## veg diversity and doy
 ## ***********************************************************************
+vdiv <-
+  all.cond.effects[["floraldiversity.floraldiversity_julian_date"]]
 
-labs.doy <- (pretty(new.orig$DoyStart, n=8))
-axis.doy <-  standardize.axis(labs.doy,
-                              new.orig$DoyStart)
-
-newdata.vegdiv <- tidyr::crossing(DoyStart =
-                                      seq(min(new.net$DoyStart, na.rm=TRUE),
-                                          max(new.net$DoyStart, na.rm=TRUE),
-                                          length.out=10),
-                                    Year = new.net$Year,
-                                    ThinStatus = (new.net$ThinStatus),
-                                    MeanCanopy = (new.net$MeanCanopy)
-)
-
-pred_vegdiv <- fit.bombus %>%
-  epred_draws(newdata = newdata.vegdiv,
-              resp = "VegDiversity",
-              allow_new_levels = TRUE)
-
-doy.veg.div <- ggplot(pred_vegdiv, aes(x = DoyStart, y =
-                                           .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Blues") +
-  labs(y = str_wrap("Flowering plant diversity", width =20),
-       x = "Day of year",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom") +
+#ggplot
+vdiv.doy <- 
+  
+  #plot model prediction with credible interval
+  ggplot(vdiv, aes(x = julian_date,
+                               y = estimate__)) +
+  geom_line(aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.3, fill = "Reds")) +
+  
+  #plot raw data
+  geom_point(data=new.net,
+             aes(x=julian_date, y=floral_diversity), cex=2, alpha = 0.2) +
+  labs(x = "Day of Year", y = "Floral diversity",
+       fill = "Credible Interval") +
+  theme_ms() +
+  theme(legend.position = "none") +
   scale_x_continuous(
     breaks = axis.doy,
     labels =  labs.doy) +
-  theme(axis.title.x = element_text(size=16),
+  scale_y_continuous(
+    labels = labs.fdiv,
+    breaks = axis.fdiv) +
+  theme(axis.title.x = element_text(size = 16),
         axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
-  theme_ms() +
-  geom_point(data=new.net,
-             aes(y=VegDiversity, x=DoyStart), cex=2)
-
-doy.veg.div
-
-# ggsave(doy.veg.div, file="figures/vegDiv_doy.pdf",
-#        height=4, width=5)
+        text = element_text(size=16))
+vdiv.doy
 
 ## ***********************************************************************
 ## veg abundance and doy
 ## ***********************************************************************
+vabun <-
+  all.cond.effects[["floralabundance.floralabundance_julian_date"]]
 
-newdata.vegdiv <- tidyr::crossing(DoyStart =
-                                    seq(min(new.net$DoyStart, na.rm=TRUE),
-                                        max(new.net$DoyStart, na.rm=TRUE),
-                                        length.out=10),
-                                  Year = new.net$Year,
-                                  ThinStatus = (new.net$ThinStatus),
-                                  MeanCanopy = (new.net$MeanCanopy)
-)
-
-pred_vegab <- fit.bombus %>%
-  epred_draws(newdata = newdata.vegdiv,
-              resp = "VegAbundance",
-              allow_new_levels = TRUE)
-
-doy.veg.ab <- ggplot(pred_vegab, aes(x = DoyStart, y =
-                                         .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Blues") +
-  labs(y = str_wrap("Flowering plant abundance (log)", width =20),
-       x = "Day of year",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom") +
+#ggplot
+vabun.doy <- 
+  
+  #plot model prediction with credible interval
+  ggplot(vabun, aes(x = julian_date,
+                   y = estimate__)) +
+  geom_line(aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.3, fill = "Reds")) +
+  
+  #plot raw data
+  geom_point(data=new.net,
+             aes(x=julian_date, y=floral_abundance), cex=2, alpha = 0.2) +
+  labs(x = "Day of Year", y = "Floral abundance",
+       fill = "Credible Interval") +
+  theme_ms() +
+  theme(legend.position = "none") +
   scale_x_continuous(
     breaks = axis.doy,
     labels =  labs.doy) +
-  theme(axis.title.x = element_text(size=16),
+  scale_y_continuous(
+    labels = labs.fabun,
+    breaks = axis.fabun) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
         axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
-  theme_ms() +
-  geom_point(data=new.net,
-             aes(y=VegAbundance, x=DoyStart), cex=2)
-
-doy.veg.ab
-
-# ggsave(doy.veg.ab, file="figures/vegab_doy.pdf",
-#        height=4, width=5)
+        text = element_text(size=16))
+vabun.doy
 
 ## ***********************************************************************
-## forest age and bombus richness 
+## floral abundance and (native) bombus abundance
 ## ***********************************************************************
+babun <-
+  all.cond.effects[["nativebeeabundance.nativebeeabundance_floral_abundance"]]
 
-labs.bee.div <- (pretty(new.orig$MeanCanopy, n=8))
-axis.bee.div <-  standardize.axis(labs.bee.div,
-                                  new.orig$MeanCanopy)
-
-newdata.beediv <- tidyr::crossing(MeanCanopy =
-                                    seq(min(new.net$MeanCanopy, na.rm=TRUE),
-                                        max(new.net$MeanCanopy, na.rm=TRUE),
-                                        length.out=10),
-                                  FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                  Stand="100:Camp",
-                                  Year = "2020",
-                                  ThinStatus = "Y",
-                                  DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                  VegAbundance = mean(new.net$VegAbundance, na.rm=TRUE),
-                                  VegDiversity = mean(new.net$VegDiversity, na.rm=TRUE),
-                                  TempCStart = mean(new.net$TempCStart, na.rm=TRUE),
-                                  ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE)
-)
-
-pred_beediv <- fit.bombus %>%
-  epred_draws(newdata = newdata.beediv,
-              resp = "BombusRareRichness",
-              allow_new_levels = TRUE)
-
-bombus.div.canopy <- ggplot(pred_beediv, aes(x = MeanCanopy,
-                                             y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = 'Greys') +
-  labs(x = "Canopy openness", y = "Rarefied *Bombus* <br>species richness",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
+#ggplot
+babun.fabun <- 
+  
+  #plot model prediction with credible interval
+  ggplot(babun, aes(x = floral_abundance,
+                    y = estimate__)) +
+  geom_line(aes(x = floral_abundance, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.3), fill = "red") +
+  
+  #plot raw data
+  geom_jitter(data=new.net,
+             aes(x=floral_abundance, y=native_bee_abundance), cex=2, alpha = 0.2) +
+  labs(y = "Native *Bombus* abundance") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=spec.net,
-             aes(x=MeanCanopy, y=BombusRareRichness, color = ThinStatus), cex=2) +
-  scale_color_manual(values=c("#000000","#999999")) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.div,
-    labels =  labs.bee.div)
+    breaks = axis.fabun,
+    labels =  labs.fabun) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-bombus.div.canopy
-
-ggsave(bombus.div.canopy, file="figures/bombusrich_stand.pdf",
-       height=4, width=5)
-
-## ***********************************************************************
-## forest age on bombus abundance 
-## ***********************************************************************
-
-labs.bee.ab <- (pretty(c(0, new.orig$MeanCanopy), n=8))
-axis.bee.ab <-  standardize.axis(labs.bee.ab,
-                                 new.orig$MeanCanopy)
-
-newdata.beeab <- tidyr::crossing(MeanCanopy =
-                                   seq(min(new.net$MeanCanopy, na.rm=TRUE),
-                                       max(new.net$MeanCanopy, na.rm=TRUE),
-                                       length.out=10),
-                                 FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                 Stand ="100:Camp",
-                                 Year = "2020",
-                                 ThinStatus = "Y",
-                                 DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                 VegAbundance = mean(new.net$VegAbundance, na.rm=TRUE),
-                                 ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE),
-                                 TempCStart = mean(new.net$TempCStart, na.rm=TRUE),
-                                 VegDiversity = mean(new.net$VegDiversity, na.rm=TRUE)
+#add annotation with posterior estimates / support level
+annotation <- data.frame(
+  x = c(0.5),
+  y = c(40),
+  label = c("***p > 0 = 1")
 )
 
-pred_beeab <- fit.bombus %>%
-  epred_draws(newdata = newdata.beeab,
-              resp = "BombusAbundance",
-              allow_new_levels = TRUE)
+# Add text
+babun.fabun + geom_text(data=annotation, aes( x=x, y=y, label=label),                 , 
+              color="orange", 
+              size=7 , angle=45, fontface="bold" )
+babun.fabun
 
-bombus.ab.canopy <- ggplot(pred_beeab, aes(x = MeanCanopy, 
-                                           y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette="Greys") +
-  labs(x = "Canopy openness", y = "*Bombus* abundance",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
+## ***********************************************************************
+## proportion blueberry on (native) bombus abundance 
+## ***********************************************************************
+babun <-
+  all.cond.effects[["nativebeeabundance.nativebeeabundance_prop_blueberry"]]
+
+#ggplot
+babun.bberry <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_blueberry, y = native_bee_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion blueberry \n (500m buffer)", y = "Native *Bombus* abundance") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=new.net,
-             aes(x=MeanCanopy, y=BombusAbundance, color = ThinStatus), cex=2) +
-  scale_color_manual(values=c("#000000","#999999")) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.ab,
-    labels = labs.bee.ab) 
-
-bombus.ab.canopy
-
-ggsave(bombus.ab.canopy, file="figures/bombusabund_stand.pdf",
-       height=4, width=5)
-
-## ***********************************************************************
-## floral abundance on bombus abundance 
-## ***********************************************************************
-
-#setting axis manually 
-labs.bee.ab <- (pretty(c(0, new.orig$VegAbundance), n=8))
-axis.bee.ab <- c(0:11)
-
-newdata.beeab <- tidyr::crossing(VegAbundance =
-                                   seq(min(new.net$VegAbundance, na.rm=TRUE),
-                                       max(new.net$VegAbundance, na.rm=TRUE),
-                                       length.out=10),
-                                 FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                 Stand ="100:Camp",
-                                 Year = "2020",
-                                 ThinStatus = "Y",
-                                 DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                 ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE),
-                                 TempCStart = mean(new.net$TempCStart, na.rm=TRUE),
-                                 VegDiversity = mean(new.net$VegDiversity, na.rm=TRUE)
-)
-
-pred_beeab <- fit.bombus %>%
-  epred_draws(newdata = newdata.beeab,
-              resp = "BombusAbundance",
-              allow_new_levels = TRUE)
-
-bombus.ab.plant <- ggplot(pred_beeab, aes(x = VegAbundance, 
-                                           y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette="Blues") +
-  labs(x = "Flowering plant abundance (log)", y = "*Bombus* abundance",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
+    breaks = axis.blueberry,
+    labels =  labs.blueberry) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) +
+
+#plot model prediction with credible interval
+  geom_line(data = babun, aes(x = prop_blueberry, y=estimate__)) +
+  geom_ribbon(data = babun, aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "purple")
+babun.bberry
+
+## ***********************************************************************
+## proportion edge on (native) bombus abundance 
+## ***********************************************************************
+babun <-
+  all.cond.effects[["nativebeeabundance.nativebeeabundance_prop_edge"]]
+
+#ggplot
+babun.edge <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_edge, y = native_bee_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion edge \n (500m buffer)", y = "Native *Bombus* abundance") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=new.net,
-             aes(x=VegAbundance, y=BombusAbundance), cex=2) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.ab,
-    labels = labs.bee.ab) 
-
-bombus.ab.plant
-
-ggsave(bombus.ab.plant, file="figures/bombusabund_plant.pdf",
-       height=4, width=5)
-
-## ***********************************************************************
-## veg diversity and bombus richness
-## ***********************************************************************
-
-labs.bee.div <- (pretty(new.orig$VegDiversity, n=8))
-axis.bee.div <-  standardize.axis(labs.bee.div,
-                                  new.orig$VegDiversity)
-
-newdata.beediv <- tidyr::crossing(VegDiversity =
-                                    seq(min(new.net$VegDiversity, na.rm=TRUE),
-                                        max(new.net$VegDiversity, na.rm=TRUE),
-                                        length.out=10),
-                                  FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                  Stand="100:Camp",
-                                  Year = "2020",
-                                  ThinStatus = "Y",
-                                  DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                  VegAbundance = mean(new.net$VegAbundance, na.rm=TRUE),
-                                  TempCStart = mean(new.net$TempCStart, na.rm=TRUE),
-                                  ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE)
-)
-
-pred_beediv <- fit.bombus %>%
-  epred_draws(newdata = newdata.beediv,
-              resp = "BombusRareRichness",
-              allow_new_levels = TRUE)
-
-bombus.div.plant <- ggplot(pred_beediv, aes(x = VegDiversity,
-                                             y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = 'Greys') +
-  labs(x = "Flowering plant diversity", y = "Rarefied *Bombus* <br>species richness",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
+    breaks = axis.edge,
+    labels =  labs.edge) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = babun, aes(x = prop_edge, y=estimate__)) +
+  geom_ribbon(data = babun, aes(ymin = lower__, ymax = upper__,
+                                alpha=0.5), fill = "purple")
+babun.edge
+
+## ***********************************************************************
+## doy on (native) bombus abundance 
+## ***********************************************************************
+babun <-
+  all.cond.effects[["nativebeeabundance.nativebeeabundance_julian_date"]]
+
+#ggplot
+babun.doy <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = julian_date, y = native_bee_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Day of Year", y = "Native *Bombus* abundance") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=spec.net,
-             aes(x=VegDiversity, y=BombusRareRichness), cex=2) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.div,
-    labels =  labs.bee.div)
-
-bombus.div.plant
-
-ggsave(bombus.div.plant, file="figures/bombusrich_veg.pdf",
-       height=4, width=5)
-
-
-## ***********************************************************************
-## temp and bombus richness 
-## ***********************************************************************
-
-labs.bee.div <- (pretty(new.orig$TempCStart, n=8))
-axis.bee.div <-  standardize.axis(labs.bee.div,
-                                  new.orig$TempCStart)
-
-newdata.beediv <- tidyr::crossing(TempCStart =
-                                    seq(min(new.net$TempCStart, na.rm=TRUE),
-                                        max(new.net$TempCStart, na.rm=TRUE),
-                                        length.out=10),
-                                  FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                  Stand="100:Camp",
-                                  Year = "2020",
-                                  ThinStatus = "Y",
-                                  DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                  VegAbundance = mean(new.net$VegAbundance, na.rm=TRUE),
-                                  VegDiversity = mean(new.net$VegDiversity, na.rm=TRUE),
-                                  ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE)
-)
-
-pred_beediv <- fit.bombus %>%
-  epred_draws(newdata = newdata.beediv,
-              resp = "BombusRareRichness",
-              allow_new_levels = TRUE)
-
-bombus.div.temp <- ggplot(pred_beediv, aes(x = TempCStart,
-                                             y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = 'Blues') +
-  labs(fill = "Credible interval") +
-  xlab("Survey starting temperature (\u00b0C)") +
-  ylab("Rarefied *Bombus* <br> species richness") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
+    breaks = axis.doy,
+    labels =  labs.doy) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = babun, aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(data = babun, aes(ymin = lower__, ymax = upper__,
+                                alpha=0.5), fill = "red")
+babun.doy
+
+
+## ***********************************************************************
+## prepping for newdata draws -- bombus div and impatiens abund models
+## ***********************************************************************
+new.net <- fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE, ]
+new.orig <- orig.spec[fvimp_brmsdf$impSubset == TRUE, ]
+
+#create axis values for standardized variables
+labs.doy <- (pretty(new.orig$julian_date, n=8))
+axis.doy <-  standardize.axis(labs.doy,
+                              new.orig$julian_date)
+
+labs.fdiv <- (pretty(new.orig$floral_diversity, n=8))
+axis.fdiv <-  standardize.axis(labs.fdiv,
+                               new.orig$floral_diversity)
+
+labs.fabun <- (pretty(new.orig$floral_abundance, n=8))
+axis.fabun <-  standardize.axis(labs.fabun,
+                                new.orig$floral_abundance)
+
+labs.blueberry <- (pretty(new.orig$prop_blueberry, n=9))
+axis.blueberry <-  standardize.axis(labs.blueberry,
+                                    new.orig$prop_blueberry)
+
+labs.edge <- (pretty(new.orig$prop_edge, n=8))
+axis.edge <-  standardize.axis(labs.edge,
+                               new.orig$prop_edge)
+
+## ***********************************************************************
+## veg abundance and bombus diversity
+## ***********************************************************************
+bdiv <-
+  all.cond.effects[["bombusshannondiversity.bombusshannondiversity_floral_abundance"]]
+
+#ggplot
+bdiv.fabund <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = floral_abundance, y = bombus_shannon_diversity)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Floral abundance (log)", y = "*Bombus* Shannon diversity") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=spec.net,
-             aes(x=TempCStart, y=BombusRareRichness), cex=2) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.div,
-    labels =  labs.bee.div)
-
-bombus.div.temp
-
-ggsave(bombus.div.temp, file="figures/bombusrich_temp.pdf",
-       height=4, width=5)
-
-## ***********************************************************************
-## bombus abundance ~ temp
-## ***********************************************************************
-
-labs.bee.ab <- (pretty(c(0, new.orig$TempCStart), n=8))
-axis.bee.ab <-  standardize.axis(labs.bee.ab,
-                                 new.orig$TempCStart)
-
-newdata.beeab <- tidyr::crossing(TempCStart =
-                                   seq(min(new.net$TempCStart, na.rm=TRUE),
-                                       max(new.net$TempCStart, na.rm=TRUE),
-                                       length.out=10),
-                                 FlowerRareRichness=mean(new.net$FlowerRareRichness, na.rm=TRUE),
-                                 Stand ="100:Camp",
-                                 Year = "2020",
-                                 ThinStatus = "Y",
-                                 DoyStart = mean(new.net$DoyStart, na.rm=TRUE),
-                                 VegAbundance = mean(new.net$VegAbundance, na.rm=TRUE),
-                                 ForageDist_km = mean(new.net$ForageDist_km, na.rm=TRUE),
-                                 VegDiversity = mean(new.net$VegDiversity, na.rm=TRUE)
-)
-
-pred_beeab <- fit.bombus %>%
-  epred_draws(newdata = newdata.beeab,
-              resp = "BombusAbundance",
-              allow_new_levels = TRUE)
-
-bombus.ab.temp <- ggplot(pred_beeab, aes(x = TempCStart, 
-                                           y = .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette="Blues") +
-  labs(x = "Survey starting temperature (\u00b0C)", 
-       y = "*Bombus* abundance",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
+    breaks = axis.fabun,
+    labels =  labs.fabun) +
+  scale_y_continuous() +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = bdiv, aes(x = floral_abundance, y=estimate__)) +
+  geom_ribbon(data = bdiv, aes(ymin = lower__, ymax = upper__,
+                                alpha=0.5), fill = "purple")
+bdiv.fabund
+
+
+## ***********************************************************************
+## julian date on bombus diversity
+## ***********************************************************************
+bdiv <-
+  all.cond.effects[["bombusshannondiversity.bombusshannondiversity_julian_date"]]
+
+#ggplot
+bdiv.doy <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = julian_date, y = bombus_shannon_diversity)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Day of year", y = "*Bombus* Shannon diversity") +
   theme_ms() +
-  theme(axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=new.net,
-             aes(x=TempCStart, y=BombusAbundance), cex=2) +
+  theme(legend.position = "none") +
   scale_x_continuous(
-    breaks = axis.bee.ab,
-    labels = labs.bee.ab) 
+    breaks = axis.doy,
+    labels =  labs.doy) +
+  scale_y_continuous() +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = bdiv, aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(data = bdiv, aes(ymin = lower__, ymax = upper__,
+                               alpha=0.5), fill = "red")
 
-bombus.ab.temp
+bdiv.doy
 
-ggsave(bombus.ab.temp, file="figures/bombusabund_temp.pdf",
-       height=4, width=5)
 
 ## ***********************************************************************
-## bee community diversity and abundance and parasitism
+## proportion blueberry on bombus diversity
 ## ***********************************************************************
-############################
+bdiv <-
+  all.cond.effects[["bombusshannondiversity.bombusshannondiversity_prop_blueberry"]]
 
-## parasitism ~ bombus diversity
-# 
-# labs.bee.div <- (pretty(c(0, orig.spec$BombusRareRichness), n=8))
-# axis.bee.div <-  standardize.axis(labs.bee.div,
-#                                   spec.net$BombusRareRichness)
+#ggplot
+bdiv.bberry <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_blueberry, y = bombus_shannon_diversity)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion blueberry (500m buffer)", y = "*Bombus* Shannon diversity") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.blueberry,
+    labels =  labs.blueberry) +
+  scale_y_continuous() +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = bdiv, aes(x = prop_blueberry, y=estimate__)) +
+  geom_ribbon(data = bdiv, aes(ymin = lower__, ymax = upper__,
+                               alpha=0.5), fill = "grey")
+bdiv.bberry
 
-data.par <- spec.net[spec.net$WeightsPar == 1, ]
+## ***********************************************************************
+## proportion edge on bombus diversity
+## ***********************************************************************
+bdiv <-
+  all.cond.effects[["bombusshannondiversity.bombusshannondiversity_prop_edge"]]
 
-newdata.beediv <- tidyr::crossing(BombusRareRichness =
-                                    seq(min(data.par$BombusRareRichness),
-                                        max(data.par$BombusRareRichness),
-                                        length.out=10),
-                                  FlowerRareRichness=mean(data.par$FlowerRareRichness),
-                                  Stand="100:Camp",
-                                  Year = "2021",
-                                  DoyStart = mean(data.par$DoyStart),
-                                  VegAbundance = mean(data.par$VegAbundance),
-                                  VegDiversity = mean(data.par$VegDiversity),
-                                  BombusAbundance = mean(data.par$BombusAbundance),
-                                  ForageDist_km = mean(data.par$ForageDist_km)
-)
+#ggplot
+bdiv.edge <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_edge, y = bombus_shannon_diversity)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion edge area (500m buffer)", y = "*Bombus* Shannon diversity") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.edge,
+    labels =  labs.edge) +
+  scale_y_continuous() +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = bdiv, aes(x = prop_edge, y=estimate__)) +
+  geom_ribbon(data = bdiv, aes(ymin = lower__, ymax = upper__,
+                               alpha=0.5), fill = "grey")
 
-pred_beediv <- fit.bombus %>%
-  epred_draws(newdata = newdata.beediv,
-              resp = "HasCrithidia",
-              allow_new_levels = TRUE)
+bdiv.edge
 
-bee.div.crithidia <- ggplot(pred_beediv, aes(x = BombusRareRichness, y =
-                                               .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Greys") +
-  labs(x = "Rarefied *Bombus* <br> species richness", 
-       y = "Stand *Crithidia* rate",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom") +
+## ***********************************************************************
+## impatiens abundance ~ floral abundance
+## ***********************************************************************
+iabund <-
+  all.cond.effects[["impatiensabundance.impatiensabundance_floral_abundance"]]
+
+#ggplot
+iabund.fabund <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = floral_abundance, y = impatiens_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Floral abundance (log)", y = "*Bombus impatiens* abundance") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.fabun,
+    labels =  labs.fabun) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = iabund, aes(x = floral_abundance, y=estimate__)) +
+  geom_ribbon(data = iabund, aes(ymin = lower__, ymax = upper__,
+                               alpha=0.5), fill = "red")
+
+iabund.fabund
+
+## ***********************************************************************
+## proportion edge on impatiens abundance 
+## ***********************************************************************
+iabund <-
+  all.cond.effects[["impatiensabundance.impatiensabundance_prop_edge"]]
+
+#ggplot
+iabund.edge <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_edge, y = impatiens_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion edge area (500m buffer)", y = "*Bombus impatiens* abundance") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.edge,
+    labels =  labs.edge) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = iabund, aes(x = prop_edge, y=estimate__)) +
+  geom_ribbon(data = iabund, aes(ymin = lower__, ymax = upper__,
+                                 alpha=0.5), fill = "purple")
+
+iabund.edge
+
+## ***********************************************************************
+## proportion blueberry on impatiens abundance 
+## ***********************************************************************
+iabund <-
+  all.cond.effects[["impatiensabundance.impatiensabundance_prop_blueberry"]]
+
+#ggplot
+iabund.bberry <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = prop_blueberry, y = impatiens_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Proportion blueberry (500m buffer)", y = "*Bombus impatiens* abundance") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.blueberry,
+    labels =  labs.blueberry) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = iabund, aes(x = prop_blueberry, y=estimate__)) +
+  geom_ribbon(data = iabund, aes(ymin = lower__, ymax = upper__,
+                                 alpha=0.5), fill = "blue")
+
+iabund.bberry
+
+## ***********************************************************************
+## impatiens abundance ~ doy
+## ***********************************************************************
+iabund <-
+  all.cond.effects[["impatiensabundance.impatiensabundance_julian_date"]]
+
+#ggplot
+iabund.doy <- 
+  
+  #plot raw data
+  ggplot(new.net, aes(x = julian_date, y = impatiens_abundance)) +
+  geom_jitter(cex = 2, alpha = 0.2) +
+  labs(x = "Day of year", y = "*Bombus impatiens* abundance") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(
+    breaks = axis.doy,
+    labels =  labs.doy) +
+  scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16)) +
+  
+  #plot model prediction with credible interval
+  geom_line(data = iabund, aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(data = iabund, aes(ymin = lower__, ymax = upper__,
+                                 alpha=0.5), fill = "red")
+
+iabund.doy
+
+
+
+## ***********************************************************************
+## prepping for newdata draws -- parasitism models
+## ***********************************************************************
+data.par <- fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE, ]
+
+#for plotting raw data as rates
+data.par %>% 
+  group_by(sample_id, final_id,status) %>%
+  summarize(site_hascrithidia = sum(hascrithidia)/n(),
+            site_hasnosema = sum(hasnosema)/n(),
+            site_apicystis = sum(apicystis)/n(),
+            impatiens_abundance = mean(impatiens_abundance),
+            prop_blueberry = mean(prop_blueberry),
+            julian_date = mean(julian_date),
+            floral_diversity = mean(floral_diversity),
+            native_bee_abundance = mean(native_bee_abundance),
+            numbees = n()) -> site_rates
+
+## ***********************************************************************
+## has crithidia ~ impatiens abundance
+## ***********************************************************************
+hascrith <-
+  all.cond.effects[["hascrithidia.hascrithidia_impatiens_abundance"]]
+
+#ggplot
+hascrith.imp <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hascrith, aes(x = impatiens_abundance, y = estimate__)) + 
+  geom_line(aes(x = impatiens_abundance, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                                   alpha=0.5), fill = "blue") +
+
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=impatiens_abundance,y = site_hascrithidia, cex = numbees, color = final_id)) +
+  labs(x = "*Bombus impatiens* abundance", y = "*Crithidia spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0,11)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+hascrith.imp
+
+
+## ***********************************************************************
+## has crithidia ~ doy
+## ***********************************************************************
+hascrith <-
+  all.cond.effects[["hascrithidia.hascrithidia_julian_date"]]
+
+#ggplot
+hascrith.doy <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hascrith, aes(x = julian_date, y = estimate__)) + 
+  geom_line(aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "red") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=julian_date,y = site_hascrithidia, cex = numbees, color = final_id)) +
+  labs(x = "Day of year", y = "*Crithidia spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.doy,
+                     labels =  labs.doy) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+hascrith.doy
+
+
+## ***********************************************************************
+## has crithidia ~ status * impatiens abundance
+## ***********************************************************************
+# calculate all conditional effects
+all.cond.effects.interaction <- conditional_effects(fit.bombus.all.prior)
+
+hascrith <-
+  all.cond.effects.interaction[["hascrithidia.hascrithidia_impatiens_abundance:status"]]
+
+#ggplot
+hascrith.imp.status <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hascrith, aes(x = impatiens_abundance, y = estimate__, color = status)) + 
+  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
+                  alpha=0.2)) +
+  geom_line(aes(x = impatiens_abundance, y=estimate__)) +
+  scale_fill_manual(values = c("pink", "blue")) +
+  #scale_color_manual(values = c("black", "blue")) +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=impatiens_abundance,y = site_hascrithidia, cex = numbees)) +
+  labs(x = "*Bombus impatiens* abundance", y = "*Crithidia spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0,11)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+hascrith.imp.status
+
+## ***********************************************************************
+## has crithidia ~ status * native bombus abundance
+## ***********************************************************************
+hascrith <-
+  all.cond.effects.interaction[["hascrithidia.hascrithidia_native_bee_abundance:status"]]
+
+#ggplot
+hascrith.babund.status <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hascrith, aes(x = native_bee_abundance, y = estimate__, color = status)) + 
+  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
+                  alpha=0.2)) +
+  geom_line(aes(x = native_bee_abundance, y=estimate__)) +
+  scale_fill_manual(values = c("pink", "blue")) +
+  #scale_color_manual(values = c("black", "blue")) +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=native_bee_abundance,y = site_hascrithidia, cex = numbees)) +
+  labs(x = "Native *Bombus* abundance", y = "*Crithidia spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
   scale_x_continuous() +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+hascrith.babund.status
+
+## ***********************************************************************
+## has nosema ~ impatiens abundance
+## ***********************************************************************
+hasnosema <-
+  all.cond.effects[["hasnosema.hasnosema_impatiens_abundance"]]
+
+#ggplot
+hasnosema.imp <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosema, aes(x = impatiens_abundance, y = estimate__)) + 
+  geom_line(aes(x = impatiens_abundance, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "purple") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=impatiens_abundance,y = site_hasnosema, cex = numbees, color = final_id)) +
+  labs(x = "*Bombus impatiens* abundance", y = "*Nosema spp.* prevalence") +
   theme_ms() +
-  theme(axis.title.x = ggtext::element_markdown(),
-        axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=data.par,
-             aes(y=BombusStandCrithidiaRate, x=BombusRareRichness), cex=2)
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0,11)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-bee.div.crithidia
+hasnosema.imp
 
-##why is there a stand with bombus div = 10 
+## ***********************************************************************
+## has nosema ~ doy
+## ***********************************************************************
+hasnosema <-
+  all.cond.effects[["hasnosema.hasnosema_julian_date"]]
 
-ggsave(bee.div.crithidia, file="figures/parasite_beeDiv.pdf",
-       height=4, width=5)
-
-## parasitism ~ bee abundance
-# labs.bee.abund <- (pretty(c(0, unweighted$BombusAbundance)))
-# axis.bee.abund <-  standardize.axis(labs.bee.abund,
-#                                     unweighted$BombusAbundance)
-
-newdata.beeabund <- tidyr::crossing(BombusAbundance =
-                                      seq(min(data.par$BombusAbundance),
-                                          max(data.par$BombusAbundance),
-                                          length.out=10),
-                                    FlowerRareRichness=mean(data.par$FlowerRareRichness),
-                                    Stand="100:Camp",
-                                    Year = "2020",
-                                    DoyStart = data.par$DoyStart,
-                                    VegAbundance = mean(data.par$VegAbundance),
-                                    TempCStart = mean(data.par$TempCStart),
-                                    VegDiversity = mean(data.par$VegDiversity),
-                                    ForageDist_km = mean(data.par$ForageDist_km)
-)
-
-pred_beeabund <- fit.bombus %>%
-  epred_draws(newdata = newdata.beeabund ,
-              resp = "HasCrithidia",
-              allow_new_levels = TRUE)
-
-
-bombus.abund.parasite <- ggplot(pred_beeabund, aes(x = BombusAbundance, y =
-                                                     .epred)) +
-  stat_lineribbon() +
-  scale_fill_brewer(palette = "Greys") +
-  labs(x = "*Bombus* abundance", y = "Stand *Crithidia* rate",
-       fill = "Credible interval") +
-  theme(legend.position = "bottom")  +
-  theme(axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        text = element_text(size=16)) +
+#ggplot
+hasnosema.doy <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosema, aes(x = julian_date, y = estimate__)) + 
+  geom_line(aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "blue") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=julian_date,y = site_hasnosema, cex = numbees, color = final_id)) +
+  labs(x = "Day of year", y = "*Nosema spp.* prevalence") +
   theme_ms() +
-  theme(axis.title.x = ggtext::element_markdown(),
-        axis.title.y = ggtext::element_markdown()) +
-  geom_point(data=data.par,
-             aes(y=BombusStandCrithidiaRate, x=BombusAbundance), cex=2)
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.doy,
+                     labels =  labs.doy) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-bombus.abund.parasite
+hasnosema.doy
 
-ggsave(bombus.abund.parasite, file="figures/parasite_beeAbund.pdf",
-       height=4, width=5)
+## ***********************************************************************
+## has nosema ~ blueberry
+## ***********************************************************************
+hasnosema <-
+  all.cond.effects[["hasnosema.hasnosema_prop_blueberry"]]
 
-#putting plots together
-#canopy and bee/flower plots 
-scatter.1 <- grid.arrange(veg.div.stand, 
-                            flower.ab.stand,
-                            bombus.div.canopy,
-                            bombus.ab.canopy,
-                            ncol=2)
+#ggplot
+hasnosema.bberry <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosema, aes(x = prop_blueberry, y = estimate__)) + 
+  geom_line(aes(x = prop_blueberry, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "blue") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=prop_blueberry,y = site_hasnosema, cex = numbees, color = final_id)) +
+  labs(x = "Proportion blueberry (500m buffer)", y = "*Nosema spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.blueberry,
+                     labels =  labs.blueberry) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-ggsave(scatter.1, file="figures/CRcanopyplots.pdf",
-       height=6, width=9)
-                            
-scatter.2 <- grid.arrange(bombus.div.plant,
-                           bombus.ab.plant,
-                          ncol=2)
+hasnosema.bberry
 
-ggsave(scatter.2, file="figures/CRplantplots.pdf",
-       height=3, width=9)
 
-scatter.3 <- grid.arrange(bombus.div.temp,
-                          bombus.ab.temp,
-                          ncol=2)
+## ***********************************************************************
+## has nosema ~ blueberry (raw data at 0/1)
+## ***********************************************************************
+hasnosemaeffects <-
+  all.cond.effects[["hasnosema.hasnosema_prop_blueberry"]]
+data.par$nosemaprev = data.par$hasnosema
+#ggplot
+hasnosema.bberry <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosemaeffects, aes(x = prop_blueberry, y = estimate__)) + 
+  geom_line(aes(x = prop_blueberry, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.4), fill = "blue") +
+  
+  #plot raw data
+  geom_jitter(data = data.par, aes(x=prop_blueberry, y = nosemaprev, alpha = 0.4), height = 0.02, width = 0.05) +
+  labs(x = "Proportion blueberry (500m buffer)", y = "*Nosema spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.blueberry,
+                     labels =  labs.blueberry) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-ggsave(scatter.3, file="figures/CRtempplots.pdf",
-       height=3, width=9)
+hasnosema.bberry
 
-scatter.4 <- grid.arrange(bee.div.crithidia,
-                          bombus.abund.parasite,
-                          ncol=2)
 
-ggsave(scatter.4, file="figures/CRdiseaseplots.pdf",
-       height=3, width=9)
 
-scatter.5 <- grid.arrange(doy.veg.div,
-                          doy.veg.ab,
-                          ncol=2)
+## ***********************************************************************
+## has nosema ~ status * impatiens abundance
+## ***********************************************************************
+hasnosema <-
+  all.cond.effects.interaction[["hasnosema.hasnosema_impatiens_abundance:status"]]
 
-ggsave(scatter.5, file="figures/CRdoyplots.pdf",
-       height=3, width=9)
+#ggplot
+hasnosema.imp.status <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosema, aes(x = impatiens_abundance, y = estimate__, color = status)) + 
+  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
+                  alpha=0.2)) +
+  geom_line(aes(x = impatiens_abundance, y=estimate__)) +
+  scale_fill_manual(values = c("pink", "blue")) +
+  #scale_color_manual(values = c("black", "blue")) +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=impatiens_abundance,y = site_hasnosema, cex = numbees)) +
+  labs(x = "*Bombus impatiens* abundance", y = "*Nosema spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "bottom") +
+  scale_x_continuous(limits = c(0,11)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-## ggsave(parasite.all, file="figures/presentation_dark/all_parasite.pdf",
-##        height=4, width=10)
+hasnosema.imp.status
 
-# #############
-# 
-# labs.veg.div <- (pretty(spec.net$FlowerRareRichness, n=8))
-# axis.veg.div <-  standardize.axis(labs.veg.div,
-#                                   spec.net$FlowerRareRichness)
-# 
-# ## parasitism ~ floral div
-# newdata.beeabund <- tidyr::crossing(FlowerRareRichness =
-#                                       seq(min(data.par$FlowerRareRichness),
-#                                           max(data.par$FlowerRareRichness),
-#                                           length.out=10),
-#                                     BombusDiversity=mean(data.par$BombusDiversity),
-#                                     Stand="100:Camp",
-#                                     Year = "2021",
-#                                     DoyStart = mean(data.par$DoyStart),
-#                                     VegAbundance = mean(data.par$VegAbundance),
-#                                     VegDiversity = mean(data.par$VegDiversity),
-#                                     BombusAbundance = mean(data.par$BombusAbundance),
-#                                     BombusRareRichness = mean(data.par$BombusRareRichness),
-#                                     ForageDist_km = mean(data.par$ForageDist_km)
-# )
-# 
-# pred_beeabund <- fit.bombus %>%
-#   epred_draws(newdata = newdata.beeabund ,
-#               resp = "HasCrithidia",
-#               allow_new_levels = TRUE)
-# 
-# 
-# veg.div.parasite <- ggplot(pred_beeabund, aes(x = FlowerRareRichness, y =
-#                                                 .epred)) +
-#   stat_lineribbon() +
-#   scale_fill_brewer(palette = "Reds") +
-#   labs(x = "Veg diversity", y = "Bombus Stand Parasitism Rate",
-#        fill = "Credible interval") +
-#   theme(legend.position = "bottom") +
-#   scale_x_continuous(
-#     breaks = axis.veg.div,
-#     labels =  labs.veg.div) +
-#   theme(axis.title.x = element_text(size=16),
-#         axis.title.y = element_text(size=16),
-#         text = element_text(size=16)) +
-#   theme_ms() +
-#   geom_point(data=data.par,
-#              aes(y=BombusStandParasitismRate, x=FlowerRareRichness), cex=2)
-# 
-# veg.div.parasite
-# 
-# ggsave(veg.div.parasite, file="figures/parasite_vegDiv.pdf",
-#        height=4, width=5)
+## ***********************************************************************
+## has nosema ~ status * native bee abundance
+## ***********************************************************************
+hasnosema <-
+  all.cond.effects.interaction[["hasnosema.hasnosema_native_bee_abundance:status"]]
 
-############################
+#ggplot
+hasnosema.babund.status <- 
+  
+  #plot model prediction with credible interval
+  ggplot(hasnosema, aes(x = native_bee_abundance, y = estimate__, color = status)) + 
+  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
+                  alpha=0.2)) +
+  geom_line(aes(x = native_bee_abundance, y=estimate__)) +
+  scale_fill_manual(values = c("pink", "blue")) +
+  #scale_color_manual(values = c("black", "blue")) +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=native_bee_abundance,y = site_hasnosema, cex = numbees)) +
+  labs(x = "Native *Bombus* abundance", y = "*Nosema spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-## parasitism ~ doy
-# 
-# labs.doy <- (pretty(spec.net.orig$DoyStart, n=8))
-# axis.doy <-  standardize.axis(labs.doy,
-#                               spec.net.orig$DoyStart)
-# 
-# 
-# newdata.beeabund <- tidyr::crossing(DoyStart =
-#                                       seq(min(data.par$DoyStart),
-#                                           max(data.par$DoyStart),
-#                                           length.out=10),
-#                                     BombusDiversity=mean(data.par$BombusDiversity),
-#                                     Stand="100:Camp",
-#                                     FireName = data.par$FireName,
-#                                     Year = data.par$Year,
-#                                     VegDiversity = mean(data.par$VegDiversity),
-#                                     VegAbundance = mean(data.par$VegAbundance),
-#                                     BombusAbundance = mean(data.par$BombusAbundance),
-#                                     LargestHighSevPatch = mean(data.par$LargestHighSevPatch)
-# )
-# 
-# pred_beeabund <- fit.bombus %>%
-#   epred_draws(newdata = newdata.beeabund ,
-#               resp = "ParasitePresence",
-#               allow_new_levels = TRUE)
-# 
-# 
-# doy.parasite <- ggplot(pred_beeabund, aes(x = DoyStart, y =
-#                                             .epred)) +
-#   stat_lineribbon() +
-#   scale_fill_brewer(palette = "Reds") +
-#   labs(x = "DoyStart", y = "Bombus Stand Parasitism Rate",
-#        fill = "Credible interval") +
-#   theme(legend.position = "bottom") +
-#   scale_x_continuous(
-#     breaks = axis.doy,
-#     labels =  labs.doy) +
-#   theme(axis.title.x = element_text(size=16),
-#         axis.title.y = element_text(size=16),
-#         text = element_text(size=16)) +
-#   theme_ms() +
-#   geom_point(data=data.par,
-#              aes(y=BombusStandParasitismRate, x=DoyStart), cex=2)
-# 
-# doy.parasite
-# 
-# ggsave(doy.parasite, file="figures/parasite_DOY.pdf",
-#        height=4, width=5)
+hasnosema.babund.status
 
-# ########################
+## ***********************************************************************
+## apicystis ~ doy
+## ***********************************************************************
+apicystis <-
+  all.cond.effects[["apicystis.apicystis_julian_date"]]
 
-# parasite.all <- grid.arrange(p1.parasite, p2.parasite, ncol=2)
+#ggplot
+apicystis.doy <- 
+  
+  #plot model prediction with credible interval
+  ggplot(apicystis, aes(x = julian_date, y = estimate__)) + 
+  geom_line(aes(x = julian_date, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "red") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=julian_date,y = site_apicystis, cex = numbees, color = final_id)) +
+  labs(x = "Day of year", y = "*Apicystis spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.doy,
+                     labels =  labs.doy) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
 
-## ggsave(parasite.all, file="figures/presentation_dark/all_parasite.pdf",
-##        height=4, width=10)
+apicystis.doy
+
+
+
+## ***********************************************************************
+## apicystis ~ floral diversity
+## ***********************************************************************
+apicystis <-
+  all.cond.effects[["apicystis.apicystis_floral_diversity"]]
+
+#ggplot
+apicystis.fdiv <- 
+  
+  #plot model prediction with credible interval
+  ggplot(apicystis, aes(x = floral_diversity, y = estimate__)) + 
+  geom_line(aes(x = floral_diversity, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "purple") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=floral_diversity,y = site_apicystis, cex = numbees, color = final_id)) +
+  labs(x = "Floral diversity", y = "*Apicystis spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = axis.fdiv,
+                     labels =  labs.fdiv) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+apicystis.fdiv
+
+
+
+## ***********************************************************************
+## apicystis ~ impatiens abundance
+## ***********************************************************************
+apicystis <-
+  all.cond.effects[["apicystis.apicystis_impatiens_abundance"]]
+
+#ggplot
+apicystis.imp <- 
+  
+  #plot model prediction with credible interval
+  ggplot(apicystis, aes(x = impatiens_abundance, y = estimate__)) + 
+  geom_line(aes(x = impatiens_abundance, y=estimate__)) +
+  geom_ribbon(aes(ymin = lower__, ymax = upper__,
+                  alpha=0.5), fill = "grey") +
+  
+  #plot raw data
+  geom_jitter(data = site_rates, aes(x=impatiens_abundance,y = site_apicystis, cex = numbees, color = final_id)) +
+  labs(x = "Floral diversity", y = "*Apicystis spp.* prevalence") +
+  theme_ms() +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0,11)) +
+  scale_y_continuous() +
+  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
+        axis.title.y = ggtext::element_markdown(size=16),
+        text = element_text(size=16))
+
+apicystis.imp
+
+## ***********************************************************************
+## make grid plots
+## ***********************************************************************
+
+#bee / floral community + landscape
+#make one big grid with all of them
+blank <- grid.rect(gp=gpar(col="white"))
+allsignificant = grid.arrange(doy.veg.abund, doy.veg.div, blank, blank,
+                              bombus.abund.doy, bombus.abund.fabund, bombus.abund.bberry, bombus.abund.edge,
+                              imp.ab.doy, imp.ab.veg, blank, blank,
+                              bombus.div.date, bombus.div.plant, blank, blank,
+                              hascrith.doy, hascrith.imp, blank, blank,
+                              cbombi.doy, cbombi.imp, blank, blank,
+                              hasnosema.doy, blank, blank, blank,
+                              apicystis.doy, apicystis.fdiv, blank, blank,
+                              anyparasite.doy, blank, blank, blank,
+                              ncol = 4)
+ggsave(allsignificant, file="figures/regressions/allsignificant.pdf",
+       height=40, width=30)
+
+#storyboard figures
+# doy vs floral/bee community
+blank <- grid.rect(gp=gpar(col="white"))
+doycommunitygrid = grid.arrange(vabun.doy, vdiv.doy,
+                              babun.doy, bdiv.doy,
+                              iabund.doy, blank,
+                              ncol = 2)
+ggsave(doycommunitygrid, file="figures/regressions/doyvscommunity.pdf",
+       height=40, width=30)
+
+#other drivers of bee community
+blank <- grid.rect(gp=gpar(col="white"))
+bombusgrid = grid.arrange(babun.fabun, babun.bberry, babun.edge,
+                                iabund.fabund, iabund.bberry, iabund.edge,
+                                bdiv.fabund, bdiv.bberry, bdiv.edge,
+                                ncol = 3)
+ggsave(doycommunitygrid, file="figures/regressions/bombusgrid.pdf",
+       height=40, width=30)
+
+#doy vs parasites
+blank <- grid.rect(gp=gpar(col="white"))
+doyparasitegrid = grid.arrange(hascrith.doy, hasnosema.doy, apicystis.doy,
+                                ncol = 3)
+
+#landscape/floral community vs parasites
+blank <- grid.rect(gp=gpar(col="white"))
+landscapeparasitegrid = grid.arrange(hasnosema.bberry, apicystis.fdiv,
+                               ncol = 2)
+
+#impatiens vs parasites
+blank <- grid.rect(gp=gpar(col="white"))
+impatiensparasitegrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp,
+                               ncol = 3)
+
+#interaction plots for crithidia
+blank <- grid.rect(gp=gpar(col='white'))
+crithinteractiongrid = grid.arrange(hascrith.babund.status, hascrith.imp.status)
+
+
+
 
