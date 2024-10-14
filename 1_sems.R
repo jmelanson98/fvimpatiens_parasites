@@ -68,13 +68,13 @@ negbin_brmsdf <- prepDataSEM(spec.data = negbin_brmsdf,
 ## **********************************************************
 ## define all the formulas for the different parts of the models
 
-formula.flower.div <- formula(floral_diversity | weights(Weights) ~
+formula.flower.div <- formula(floral_diversity | subset(Subset) ~
                                   poly(julian_date, 2) +
                                   (1|sample_pt)
                               )
 
 ## flower abund with simpson div
-formula.flower.abund <- formula(floral_abundance | weights(Weights) ~
+formula.flower.abund <- formula(floral_abundance | subset(Subset) ~
                                     poly(julian_date, 2) +
                                     (1|sample_pt)
                                 )
@@ -83,21 +83,21 @@ formula.flower.abund <- formula(floral_abundance | weights(Weights) ~
 ## Model 1.2: formula for landscape & floral effects on bee community
 ## **********************************************************
 
-formula.bee.div <- formula(bombus_shannon_diversity | weights(Weights)~
+formula.bee.div <- formula(bombus_shannon_diversity | subset(Subset)~
                              floral_diversity + floral_abundance +
                               poly(julian_date, 2) + landscape_shdi +
                                prop_blueberry + prop_edge +
                                (1|sample_pt)
                            )
 
-formula.bee.abund <- formula(native_bee_abundance | weights(Weights)~
+formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
                                floral_abundance + floral_diversity +
                                prop_blueberry + prop_edge + landscape_shdi + 
                                poly(julian_date, 2) +
                                  (1|sample_pt)  
                              )
 
-formula.imp.abund <- formula(impatiens_abundance | weights(Weights)~
+formula.imp.abund <- formula(impatiens_abundance | subset(Subset)~
                                floral_abundance + floral_diversity +
                                prop_blueberry + prop_edge + landscape_shdi + 
                                poly(julian_date, 2) +
