@@ -9,7 +9,7 @@ setwd("~/Documents/UBC/Bombus Project/fvimpatiens_parasites")
 rm(list=ls())
 
 ## set to the number of cores you would like the models to run on
-ncores <- 1
+ncores <- 3
 
 fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", row.names = 1)
 source("src/init.R")
@@ -26,7 +26,7 @@ source("src/runPlotFreqModelDiagnostics.R")
 
 ## all of the variables that are explanatory variables and thus need
 ## to be centered. Because brms needs a single dataset, which must be
-## at the indivudal-level for the parasite model, we need to carefully
+## at the individual-level for the parasite model, we need to carefully
 ## standardize the data at the correct level. 
 
 ## standardize by transect -- landscape variables which are the same during all rounds, vary only 
@@ -45,15 +45,7 @@ vars_transect_sr<- c("julian_date",
 ## variables to log but add 1 first (due to zeros)
 variables.to.log.p1 <- c()
 
-
-## Create a dummy variable "Weight" to deal with the data sets being at
-## different levels to get around the issue of having to pass in one
-## data set into brms
-## 
-## ********************************************************
-## log variables here
-## ********************************************************
-
+## save original data for later
 orig.spec <- fvimp_brmsdf
 
 ## Make SEM weights and standardize data.
@@ -114,10 +106,11 @@ formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
 ## Model 1.3: formula for bee community effects on parasitism
 ## **********************************************************
 
-xvars.fv <- c("bombus_shannon_diversity",
+xvars.fv.base <- c("bombus_shannon_diversity",
               "native_bee_abundance",
               "impatiens_abundance",
               "status",
+              "caste",
               "floral_abundance",
               "floral_diversity",
               "prop_blueberry",
@@ -127,6 +120,20 @@ xvars.fv <- c("bombus_shannon_diversity",
               "(1|subsite)",
               "(1|gr(final_id, cov = studycov))"
                  )
+
+xvars.fv.inter <- c("bombus_shannon_diversity",
+                   "native_bee_abundance*status",
+                   "impatiens_abundance*status",
+                   "caste",
+                   "floral_abundance",
+                   "floral_diversity",
+                   "prop_blueberry",
+                   "julian_date",
+                   "I(julian_date^2)",
+                   "(1|sample_pt)",
+                   "(1|subsite)",
+                   "(1|gr(final_id, cov = studycov))"
+)
 
 ## **********************************************************
 ## Random effects of phylogeny
@@ -142,16 +149,26 @@ studycov = getPhyloMatrix(studyspecies)
 ## Run all models
 ## **********************************************************
 
-formula.allcrith <-  runParasiteModels(fvimp_brmsdf,
+#no interactions
+formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
                                         "hascrithidia", 
-                                        xvars.fv)
-formula.allnos <-  runParasiteModels(fvimp_brmsdf,
+                                        xvars.fv.base)
+formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
                                    "hasnosema", 
-                                   xvars.fv)
-formula.apicystis <-  runParasiteModels(fvimp_brmsdf,
+                                   xvars.fv.base)
+formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
-                                        xvars.fv)
-
+                                        xvars.fv.base)
+#interactions
+formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
+                                            "hascrithidia", 
+                                            xvars.fv.inter)
+formula.allnos.inter <-  runParasiteModels(fvimp_brmsdf,
+                                          "hasnosema", 
+                                          xvars.fv.inter)
+formula.apicystis.inter <-  runParasiteModels(fvimp_brmsdf,
+                                             "apicystis", 
+                                             xvars.fv.inter)
 
 
 bf.fdiv <- bf(formula.flower.div, family="student")
@@ -160,21 +177,30 @@ bf.bdiv <- bf(formula.bee.div, family="hurdle_lognormal")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 
-## convert to brms format
-bf.allcrith <- bf(formula.allcrith, family="bernoulli")
-bf.allnos <- bf(formula.allnos, family="bernoulli")
-bf.api <- bf(formula.apicystis, family="bernoulli")
-bform <-  bf.fdiv + bf.fabund + 
+## convert to brms format (no interactions)
+bf.allcrith.base <- bf(formula.allcrith.base, family="bernoulli")
+bf.allnos.base <- bf(formula.allnos.base, family="bernoulli")
+bf.api.base <- bf(formula.apicystis.base, family="bernoulli")
+bform.base <-  bf.fdiv + bf.fabund + 
   bf.babund + bf.bdiv + bf.iabund + 
-  bf.allcrith + bf.allnos + bf.api +
+  bf.allcrith.base + bf.allnos.base + bf.api.base +
+  set_rescor(FALSE)
+
+## convert to brms format (interactions)
+bf.allcrith.inter <- bf(formula.allcrith.inter, family="bernoulli")
+bf.allnos.inter <- bf(formula.allnos.inter, family="bernoulli")
+bf.api.inter <- bf(formula.apicystis.inter, family="bernoulli")
+bform.inter <-  bf.fdiv + bf.fabund + 
+  bf.babund + bf.bdiv + bf.iabund + 
+  bf.allcrith.inter + bf.allnos.inter + bf.api.inter +
   set_rescor(FALSE)
 
 ##set priors for pesky interaction term
 prior<-c(set_prior("normal(0,1)", class = "b", coef = "", resp = "hasnosema"))
 prior<-c(set_prior("normal(0,1)", class = "b", coef = ""))
 
-## run model
-fit.bombus.all.prior.nointeractions <- brm(bform, fvimp_brmsdf,
+## run model without interactions
+fit.bombus.all.base <- brm(bform.base, fvimp_brmsdf,
                               cores=ncores,
                               iter = (10^4),
                               chains =3,
@@ -189,26 +215,63 @@ fit.bombus.all.prior.nointeractions <- brm(bform, fvimp_brmsdf,
                               data2 = list(studycov = studycov)
 )
 
-write.ms.table(fit.bombus.all.prior.nointeractions, "AllModels_fv_bernoulli_phylo_prior_nointeractions")
-save(fit.bombus.all.prior.natinteraction.reduced, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv_bernoulli_phylo_prior_natinteraction_reduced.Rdata")
+write.ms.table(fit.bombus.all.base, "AllModels_fv_nointeractions")
+save(fit.bombus.all.base, fvimp_brmsdf, orig.spec,
+     file="saved/AllModels_fv_nointeractions.Rdata")
 
-load(file="saved/AllModels_fv_bernoulli_phylo_prior_natinteraction_reduced.Rdata")
+load(file="saved/AllModels_fv_nointeractions.Rdata")
 
-plot.res(fit.bombus.all.prior.natinteraction.reduced, "AllModels_fv_bernoulli_phylo_prior_natinteraction_reduced")
+plot.res(fit.bombus.all.base, "AllModels_fv_nointeractions")
 
-summary(fit.bombus.all.prior.natinteraction.reduced)
+summary(fit.bombus.all.base)
 
-bayes_R2(fit.bombus.all.prior.natinteraction.reduced)
+bayes_R2(fit.bombus.all.base)
 
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp="floraldiversity"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp="floralabundance"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp="bombusshannondiversity"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp = "hascrithidia"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp = "hasnosema"))
-plot(pp_check(fit.bombus.all.prior.impinteraction, resp = "apicystis"))
+plot(pp_check(fit.bombus.all.base, resp="floraldiversity"))
+plot(pp_check(fit.bombus.all.base, resp="floralabundance"))
+plot(pp_check(fit.bombus.all.base, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.all.base, resp="bombusshannondiversity"))
+plot(pp_check(fit.bombus.all.base, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.all.base, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.all.base, resp = "hasnosema"))
+plot(pp_check(fit.bombus.all.base, resp = "apicystis"))
+
+## run model with interactions
+fit.bombus.all.inter <- brm(bform.inter, fvimp_brmsdf,
+                           cores=ncores,
+                           iter = (10^4),
+                           chains =3,
+                           prior = prior,
+                           thin=1,
+                           init=0,
+                           save_pars = save_pars(all = TRUE),
+                           open_progress = FALSE,
+                           control = list(adapt_delta = 0.999,
+                                          stepsize = 0.001,
+                                          max_treedepth = 20),
+                           data2 = list(studycov = studycov)
+)
+
+write.ms.table(fit.bombus.all.inter, "AllModels_fv_interactions")
+save(fit.bombus.all.inter, fvimp_brmsdf, orig.spec,
+     file="saved/AllModels_fv_interactions.Rdata")
+
+load(file="saved/AllModels_fv_interactions.Rdata")
+
+plot.res(fit.bombus.all.inter, "AllModels_fv_interactions")
+
+summary(fit.bombus.all.inter)
+
+bayes_R2(fit.bombus.all.inter)
+
+plot(pp_check(fit.bombus.all.inter, resp="floraldiversity"))
+plot(pp_check(fit.bombus.all.inter, resp="floralabundance"))
+plot(pp_check(fit.bombus.all.inter, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.all.inter, resp="bombusshannondiversity"))
+plot(pp_check(fit.bombus.all.inter, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.all.inter, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.all.inter, resp = "hasnosema"))
+plot(pp_check(fit.bombus.all.inter, resp = "apicystis"))
 
 
 ## **********************************************************
