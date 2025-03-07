@@ -1,0 +1,16 @@
+"","Comparison","Estimate","EstError","Pgt0","Plt0","BayesP","Pgt0Stars","Plt0Stars","adjusted_p"
+"1","Intercept - final_idBombus_flavifrons",1.76613485762138,0.961899158017299,0.9646,0.0354,0.0354,"ns","*",0.531
+"2","Intercept - final_idBombus_impatiens",4.05765010777598,1.14773594205651,0.9997,3e-04,0.000266666666666637,"ns","***",0.00399999999999956
+"3","Intercept - final_idBombus_mixtus",1.55789111061642,0.912327437002141,0.9538,0.0462,0.0462,"ns","*",0.693
+"4","Intercept - final_idBombus_rufocinctus",1.80476773243351,1.0674171017403,0.956,0.044,0.044,"ns","*",0.660000000000001
+"5","Intercept - final_idBombus_vosnesenskii",3.18756700960198,1.41112479647392,0.9949,0.0051,0.00513333333333332,"ns","**",0.0769999999999998
+"6","final_idBombus_flavifrons - final_idBombus_impatiens",2.2915152501546,0.848577342242258,0.9992,8e-04,0.000800000000000023,"ns","***",0.0120000000000003
+"7","final_idBombus_flavifrons - final_idBombus_mixtus",-0.208243747004964,0.469216432767712,0.3369,0.6631,0.336933333333333,"ns","ns",1
+"8","final_idBombus_flavifrons - final_idBombus_rufocinctus",0.0386328748121233,0.746956942117318,0.5039,0.4961,0.496133333333333,"ns","ns",1
+"9","final_idBombus_flavifrons - final_idBombus_vosnesenskii",1.42143215198059,1.1726411309769,0.9102,0.0898,0.0898,"ns","ns",1
+"10","final_idBombus_impatiens - final_idBombus_mixtus",-2.49975899715956,0.792886600638144,0,1,0,"***","ns",0
+"11","final_idBombus_impatiens - final_idBombus_rufocinctus",-2.25288237534247,0.971718169954786,0.0102,0.9898,0.0102,"*","ns",0.153
+"12","final_idBombus_impatiens - final_idBombus_vosnesenskii",-0.870083098174004,1.33021650533038,0.2361,0.7639,0.236133333333333,"ns","ns",1
+"13","final_idBombus_mixtus - final_idBombus_rufocinctus",0.246876621817088,0.681744833902328,0.6196,0.3804,0.3804,"ns","ns",1
+"14","final_idBombus_mixtus - final_idBombus_vosnesenskii",1.62967589898556,1.12660674521983,0.9569,0.0431,0.0430666666666667,"ns","*",0.646
+"15","final_idBombus_rufocinctus - final_idBombus_vosnesenskii",1.38279927716847,1.27687159841086,0.8738,0.1262,0.1262,"ns","ns",1
