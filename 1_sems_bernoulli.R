@@ -11,7 +11,7 @@ rm(list=ls())
 ## set to the number of cores you would like the models to run on
 ncores <- 3
 
-fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", row.names = 1)
+fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 source("src/init.R")
 source("src/misc.R")
 source("src/writeResultsTable.R")
@@ -78,7 +78,7 @@ formula.flower.abund <- formula(floral_abundance | subset(Subset) ~
 ## **********************************************************
 #use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
 #these sampling efforts can be included in i) the vegetation models, ii) native bombus abundance models, because it does
-#not effect either. But they must be subseted out of all other models; luckily we did not screen any bees for parasites from
+#not affect either. But they must be subseted out of all other models; luckily we did not screen any bees for parasites from
 #those days, so this does not effect subsetPar
 
 formula.bee.div <- formula(bombus_shannon_diversity | subset(impSubset)~
@@ -87,6 +87,15 @@ formula.bee.div <- formula(bombus_shannon_diversity | subset(impSubset)~
                              landscape_shdi + prop_edge + prop_blueberry +
                                (1|sample_pt)
                            )
+
+formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
+                             floral_abundance + floral_diversity +
+                             julian_date + I(julian_date^2) + 
+                             landscape_shdi + prop_edge + prop_blueberry +
+                             (1|sample_pt)
+)
+
+
 
 formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
                                floral_abundance + floral_diversity +
@@ -106,34 +115,18 @@ formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
 ## Model 1.3: formula for bee community effects on parasitism
 ## **********************************************************
 
-xvars.fv.base <- c("bombus_shannon_diversity",
-              "native_bee_abundance",
-              "impatiens_abundance",
-              "status",
+xvars.fv.base <- c("native_bee_abundance",
+              "bombus_richness",
               "caste",
+              "impatiens_abundance",
               "floral_abundance",
               "floral_diversity",
-              "prop_blueberry",
               "julian_date",
               "I(julian_date^2)",
               "(1|sample_pt)",
               "(1|subsite)",
-              "(1|gr(final_id, cov = studycov))"
+              "(impatiens_abundance|final_id)"
                  )
-
-xvars.fv.inter <- c("bombus_shannon_diversity",
-                   "native_bee_abundance*status",
-                   "impatiens_abundance*status",
-                   "caste",
-                   "floral_abundance",
-                   "floral_diversity",
-                   "prop_blueberry",
-                   "julian_date",
-                   "I(julian_date^2)",
-                   "(1|sample_pt)",
-                   "(1|subsite)",
-                   "(1|gr(final_id, cov = studycov))"
-)
 
 ## **********************************************************
 ## Random effects of phylogeny
@@ -141,7 +134,7 @@ xvars.fv.inter <- c("bombus_shannon_diversity",
 #create phylo variance-covariance matrix for group of study species
 studyspecies = c("Bombus_mixtus", "Bombus_flavifrons", "Bombus_rufocinctus", "Bombus_californicus", 
                  "Bombus_impatiens", "Bombus_vosnesenskii", "Bombus_sitkensis", "Bombus_melanopygus", 
-                 "Bombus_medius")
+                 "Bombus_nevadensis", "Bombus_medius")
 studycov = getPhyloMatrix(studyspecies)
 
 
@@ -159,119 +152,70 @@ formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
 formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
                                         xvars.fv.base)
-#interactions
-formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
-                                            "hascrithidia", 
-                                            xvars.fv.inter)
-formula.allnos.inter <-  runParasiteModels(fvimp_brmsdf,
-                                          "hasnosema", 
-                                          xvars.fv.inter)
-formula.apicystis.inter <-  runParasiteModels(fvimp_brmsdf,
-                                             "apicystis", 
-                                             xvars.fv.inter)
 
 
 bf.fdiv <- bf(formula.flower.div, family="student")
 bf.fabund <- bf(formula.flower.abund, family = "student")
-bf.bdiv <- bf(formula.bee.div, family="hurdle_lognormal")
+bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 
-## convert to brms format (no interactions)
+## convert to brms format
 bf.allcrith.base <- bf(formula.allcrith.base, family="bernoulli")
 bf.allnos.base <- bf(formula.allnos.base, family="bernoulli")
 bf.api.base <- bf(formula.apicystis.base, family="bernoulli")
-bform.base <-  bf.fdiv + bf.fabund + 
-  bf.babund + bf.bdiv + bf.iabund + 
+bform.base <-  bf.fdiv + bf.fabund + bf.brich +
+  bf.babund + bf.iabund + 
   bf.allcrith.base + bf.allnos.base + bf.api.base +
   set_rescor(FALSE)
-
-## convert to brms format (interactions)
-bf.allcrith.inter <- bf(formula.allcrith.inter, family="bernoulli")
-bf.allnos.inter <- bf(formula.allnos.inter, family="bernoulli")
-bf.api.inter <- bf(formula.apicystis.inter, family="bernoulli")
-bform.inter <-  bf.fdiv + bf.fabund + 
-  bf.babund + bf.bdiv + bf.iabund + 
-  bf.allcrith.inter + bf.allnos.inter + bf.api.inter +
+bform.par <- bf.allcrith.base + bf.allnos.base + bf.api.base +
   set_rescor(FALSE)
 
+
 ##set priors for pesky interaction term
-prior<-c(set_prior("normal(0,1)", class = "b", coef = "", resp = "hasnosema"))
-prior<-c(set_prior("normal(0,1)", class = "b", coef = ""))
+prior <- c(set_prior("normal(0, 1)", class = "b", 
+                      coef = "native_bee_abundance:statusnonnative", 
+                      resp = "hasnosema"))
+
 
 ## run model without interactions
-fit.bombus.all.base <- brm(bform.base, fvimp_brmsdf,
-                              cores=ncores,
+fvimp_par = fvimp_brmsdf %>% filter(apidae == 1)
+fit.bombus.nos <- brm(bf.allnos.base, fvimp_par,
+                              cores=3,
                               iter = (10^4),
-                              chains =3,
-                              prior = prior,
+                              chains = 3,
                               thin=1,
                               init=0,
                               save_pars = save_pars(all = TRUE),
                               open_progress = FALSE,
                               control = list(adapt_delta = 0.999,
                                              stepsize = 0.001,
-                                             max_treedepth = 20),
-                              data2 = list(studycov = studycov)
+                                             max_treedepth = 20)
 )
 
-write.ms.table(fit.bombus.all.base, "AllModels_fv_nointeractions")
-save(fit.bombus.all.base, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv_nointeractions.Rdata")
 
-load(file="saved/AllModels_fv_nointeractions.Rdata")
 
-plot.res(fit.bombus.all.base, "AllModels_fv_nointeractions")
+write.ms.table(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
+save(fit.bombus.all.beta.base, fvimp_brmsdf, orig.spec,
+     file="saved/AllModels_fv_beerichbeta.Rdata")
 
-summary(fit.bombus.all.base)
+load(file="saved/AllModels_fv_beerichbeta.Rdata")
 
-bayes_R2(fit.bombus.all.base)
+plot.res(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
+
+summary(fit.all.base.brichnb)
+
+bayes_R2(fit.bombus.all.beta)
 
 plot(pp_check(fit.bombus.all.base, resp="floraldiversity"))
 plot(pp_check(fit.bombus.all.base, resp="floralabundance"))
 plot(pp_check(fit.bombus.all.base, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.all.base, resp="bombusshannondiversity"))
+plot(pp_check(fit.all.base.brichnb, resp="bombusrichness"))
 plot(pp_check(fit.bombus.all.base, resp = "impatiensabundance"))
 plot(pp_check(fit.bombus.all.base, resp = "hascrithidia"))
 plot(pp_check(fit.bombus.all.base, resp = "hasnosema"))
 plot(pp_check(fit.bombus.all.base, resp = "apicystis"))
 
-## run model with interactions
-fit.bombus.all.inter <- brm(bform.inter, fvimp_brmsdf,
-                           cores=ncores,
-                           iter = (10^4),
-                           chains =3,
-                           prior = prior,
-                           thin=1,
-                           init=0,
-                           save_pars = save_pars(all = TRUE),
-                           open_progress = FALSE,
-                           control = list(adapt_delta = 0.999,
-                                          stepsize = 0.001,
-                                          max_treedepth = 20),
-                           data2 = list(studycov = studycov)
-)
-
-write.ms.table(fit.bombus.all.inter, "AllModels_fv_interactions")
-save(fit.bombus.all.inter, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv_interactions.Rdata")
-
-load(file="saved/AllModels_fv_interactions.Rdata")
-
-plot.res(fit.bombus.all.inter, "AllModels_fv_interactions")
-
-summary(fit.bombus.all.inter)
-
-bayes_R2(fit.bombus.all.inter)
-
-plot(pp_check(fit.bombus.all.inter, resp="floraldiversity"))
-plot(pp_check(fit.bombus.all.inter, resp="floralabundance"))
-plot(pp_check(fit.bombus.all.inter, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.all.inter, resp="bombusshannondiversity"))
-plot(pp_check(fit.bombus.all.inter, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.all.inter, resp = "hascrithidia"))
-plot(pp_check(fit.bombus.all.inter, resp = "hasnosema"))
-plot(pp_check(fit.bombus.all.inter, resp = "apicystis"))
 
 
 ## **********************************************************
@@ -310,22 +254,28 @@ remove_subset_other_formula <- function(form){
 
 
 #run frequentist checks for parasite models
-run_plot_freq_model_diagnostics(remove_subset_parasite_formula(formula.allnos),
+run_plot_freq_model_diagnostics(remove_subset_parasite_formula(formula.allcrith.base),
                                 this_data=fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE,],
                                 this_family="bernoulli", site.lat="site")
+#impatiens_abundance VIF becomes intermediate for apicystis interaction model (which we already know is not great)
+#still big error bars on nosema interaction VIF still (and binned residuals are worse?)
 
 #run frequentist checks for models including impatiens
-  run_plot_freq_model_diagnostics(remove_subset_imp_formula(formula.imp.abund),
+run_plot_freq_model_diagnostics(remove_subset_imp_formula(formula.bee.div),
                                   this_data=fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE,],
                                   this_family="negbinomial", site.lat="site")
 
+
 #run frequentist checks for floral/native bee abundance models
-run_plot_freq_model_diagnostics(remove_subset_other_formula(formula.flower.abund),
+run_plot_freq_model_diagnostics(remove_subset_other_formula(formula.bee.abund),
                                 this_data=fvimp_brmsdf[fvimp_brmsdf$Subset == TRUE,],
-                                this_family="students", site.lat="site")
+                                this_family="negbinomial", site.lat="site")
 
 
 
+## **********************************************************
+## Model Comparisons
+## **********************************************************
 #comparison of two best models
 waic(
   fit.bombus.all.prior.natinteraction,
@@ -337,6 +287,15 @@ waic(
   model_names = NULL
 )
 
+
+loofit = loo::loo(
+  fit.bombus.all.inter,
+  compare = TRUE,
+  resp = "hasnosema",
+  pointwise = FALSE,
+  k_threshold = 0.7,
+  model_names = NULL
+)
 
 loofit = loo::loo(
   fit.nosema.nointeractions.momentmatching,
@@ -362,10 +321,56 @@ loo_moment_match(
 )
 
 
-par = fvimp_reduced[fvimp_reduced$subsetPar == TRUE,]
-pareto_k <- loo_result$diagnostics$pareto_k
+par = fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE,]
+pareto_k <- loofit$diagnostics$pareto_k
 high_pareto_k_indices <- which(pareto_k > 0.7)
 high_pareto_k_data_new <- par[high_pareto_k_indices, ]
 
 # View or save the high k data points
 print(high_pareto_k_data)
+
+
+## **********************************************************
+## Models for parasitism between species
+## **********************************************************
+bf.cbombi <- bf(formula(cbombii ~ final_id), family="bernoulli")
+bf.cexpoeki <- bf(formula(cexpoeki ~ final_id), family="bernoulli")
+bf.crithidiaspp <- bf(formula(crithidiaspp ~ final_id), family = "bernoulli")
+bf.apicystis <- bf(formula(apicystis ~ final_id), family="bernoulli")
+bf.nceranae <- bf(formula(nceranae ~ final_id), family = "bernoulli")
+bf.nbombi <- bf(formula(nbombii ~ final_id), family = "bernoulli")
+bf.asco <- bf(formula(ascosphaera ~ final_id), family = "bernoulli")
+
+
+prior <- c(
+  prior(normal(0, 5), class = "b"), # Prior for the coefficients (fixed effects)
+  prior(normal(0, 5), class = "Intercept") # Prior for the intercept
+)
+
+fvimp_subpar$final_id = as.factor(fvimp_subpar$final_id)
+
+fit.asco.species <- brm(bf.asco, fvimp_subpar,
+                                cores=3,
+                                iter = (10^4),
+                                chains = 3,
+                                prior = prior,
+                                thin=1,
+                                init=0,
+                                save_pars = save_pars(all = TRUE),
+                                open_progress = FALSE,
+                                control = list(adapt_delta = 0.999,
+                                               stepsize = 0.001,
+                                               max_treedepth = 20)
+)
+
+
+write.ms.table.differences(fit.cbombi.species, "cbombispeciestable")
+write.ms.table.differences(fit.cexpoeki.species, "cexpoekispeciestable")
+write.ms.table.differences(fit.crithidiaspp.species, "crithidiasppspeciestable")
+write.ms.table.differences(fit.nbombi.species, "nbombispeciestable")
+write.ms.table.differences(fit.nceranae.species, "nceranaespeciestable")
+write.ms.table.differences(fit.apicystis.species, "apicystisspeciestable")
+write.ms.table.differences(fit.asco.species, "ascospeciestable")
+
+
+

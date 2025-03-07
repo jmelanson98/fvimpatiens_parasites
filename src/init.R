@@ -4,16 +4,29 @@ library(bayestestR)
 
 ## general
 library(tidyverse)
+library(dplyr)
 
 ## plotting
 library(ggplot2)
-library(tidyverse)
 library(tidybayes)
 library(ggthemes)
 library(ggtext)
 library(stringr)
 library(viridis)
 library(gridExtra)
+library(cowplot)
+library(modelr)
+
+
+## variograms + other spatial stuff
+library(raster)
+library(ggspatial)
+library(terra)
+library(sf)
+library(lme4)
+library(gstat)
+library(sp)
+library(glme)
 
 ## trees
 library(phytools)
