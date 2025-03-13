@@ -104,7 +104,7 @@ xvars.fv.base <- c("floral_abundance",
                     "I(julian_date^2)",
                     "(1|sample_pt)",
                    "(1|subsite)",
-                   "(1|final_id)"
+                   "(1|gr(final_id,cov = studycov))"
                  )
 
 ## **********************************************************
@@ -153,16 +153,17 @@ prior <- c(set_prior("normal(0, 1)", class = "b",
 
 ## run model without interactions
 fit.bombus <- brm(bform.base, fvimp_brmsdf,
-                              cores=3,
+                              cores=4,
                               iter = (10^4),
-                              chains = 3,
+                              chains = 4,
                               thin=1,
                               init=0,
                               save_pars = save_pars(all = TRUE),
                               open_progress = FALSE,
                               control = list(adapt_delta = 0.999,
                                              stepsize = 0.001,
-                                             max_treedepth = 20)
+                                             max_treedepth = 20),
+                              data2 = list(studycov = studycov)
 )
 
 
