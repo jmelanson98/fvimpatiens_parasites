@@ -70,6 +70,12 @@ p2 <-  ggtree(trs) + facet_wrap(~.id) +
   scale_colour_viridis_c(option="magma",  direction = -1) +
   guides(cex = "none")
 
+git filter-repo --path .RData --invert-paths
+git push origin --force --all
+
+
+
+
 p3 <- grid.arrange(p1, p2, nrow = 1)
 
 ggsave(p3,

@@ -48,7 +48,7 @@ variables.to.log.p1 <- c()
 ## save original data for later
 orig.spec <- fvimp_brmsdf
 
-## Make SEM weights and standardize data.
+## Make SEM subsets and standardize data.
 #insert Bombus medius as filler species for NA rows
 fvimp_brmsdf <- prepDataSEM_bernoulli(spec.data = fvimp_brmsdf,
                             vars_transect = vars_transect,
@@ -56,45 +56,21 @@ fvimp_brmsdf <- prepDataSEM_bernoulli(spec.data = fvimp_brmsdf,
 
 
 
-
 ## **********************************************************
-## Model 1.1: formula for landscape effects on floral community
-## **********************************************************
-## define all the formulas for the different parts of the models
-
-formula.flower.div <- formula(floral_diversity | subset(Subset) ~
-                                  julian_date + I(julian_date^2) +
-                                  (1|sample_pt)
-                              )
-
-## flower abund with simpson div
-formula.flower.abund <- formula(floral_abundance | subset(Subset) ~
-                                    julian_date + I(julian_date^2) +
-                                    (1|sample_pt)
-                                )
-
-## **********************************************************
-## Model 1.2: formula for landscape & floral effects on bee community
+## Model 1.1: formula for landscape & floral effects on bee community
 ## **********************************************************
 #use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
-#these sampling efforts can be included in i) the vegetation models, ii) native bombus abundance models, because it does
+#these sampling efforts can be included in native bombus abundance models, because it does
 #not affect either. But they must be subseted out of all other models; luckily we did not screen any bees for parasites from
 #those days, so this does not effect subsetPar
 
-formula.bee.div <- formula(bombus_shannon_diversity | subset(impSubset)~
-                             floral_abundance + floral_diversity +
-                              julian_date + I(julian_date^2) + 
-                             landscape_shdi + prop_edge + prop_blueberry +
-                               (1|sample_pt)
-                           )
 
 formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
-                             floral_abundance + floral_diversity +
-                             julian_date + I(julian_date^2) + 
-                             landscape_shdi + prop_edge + prop_blueberry +
+                             prop_blueberry + prop_edge + landscape_shdi +
+                              floral_abundance + floral_diversity +
+                             julian_date + I(julian_date^2) +
                              (1|sample_pt)
 )
-
 
 
 formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
@@ -112,20 +88,23 @@ formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
 )
 
 ## **********************************************************
-## Model 1.3: formula for bee community effects on parasitism
+## Model 1.2: formula for bee community effects on parasitism
 ## **********************************************************
 
-xvars.fv.base <- c("native_bee_abundance",
-              "bombus_richness",
-              "caste",
-              "impatiens_abundance",
-              "floral_abundance",
-              "floral_diversity",
-              "julian_date",
-              "I(julian_date^2)",
-              "(1|sample_pt)",
-              "(1|subsite)",
-              "(impatiens_abundance|final_id)"
+xvars.fv.base <- c("floral_abundance",
+                    "floral_diversity",
+                    "bombus_richness",
+                    "native_bee_abundance",
+                    "impatiens_abundance",
+                    "prop_blueberry",
+                    "prop_edge",
+                    "landscape_shdi",
+                    "caste",
+                    "julian_date",
+                    "I(julian_date^2)",
+                    "(1|sample_pt)",
+                   "(1|subsite)",
+                   "(1|final_id)"
                  )
 
 ## **********************************************************
@@ -153,9 +132,6 @@ formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
                                         xvars.fv.base)
 
-
-bf.fdiv <- bf(formula.flower.div, family="student")
-bf.fabund <- bf(formula.flower.abund, family = "student")
 bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
@@ -164,11 +140,8 @@ bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 bf.allcrith.base <- bf(formula.allcrith.base, family="bernoulli")
 bf.allnos.base <- bf(formula.allnos.base, family="bernoulli")
 bf.api.base <- bf(formula.apicystis.base, family="bernoulli")
-bform.base <-  bf.fdiv + bf.fabund + bf.brich +
-  bf.babund + bf.iabund + 
+bform.base <-  bf.brich + bf.babund + bf.iabund + 
   bf.allcrith.base + bf.allnos.base + bf.api.base +
-  set_rescor(FALSE)
-bform.par <- bf.allcrith.base + bf.allnos.base + bf.api.base +
   set_rescor(FALSE)
 
 
@@ -179,8 +152,7 @@ prior <- c(set_prior("normal(0, 1)", class = "b",
 
 
 ## run model without interactions
-fvimp_par = fvimp_brmsdf %>% filter(apidae == 1)
-fit.bombus.nos <- brm(bf.allnos.base, fvimp_par,
+fit.bombus <- brm(bform.base, fvimp_brmsdf,
                               cores=3,
                               iter = (10^4),
                               chains = 3,
