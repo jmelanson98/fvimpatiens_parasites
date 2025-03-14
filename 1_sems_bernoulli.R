@@ -107,6 +107,22 @@ xvars.fv.base <- c("floral_abundance",
                    "(1|gr(final_id,cov = studycov))"
                  )
 
+xvars.fv.inter <- c("floral_abundance",
+                   "floral_diversity",
+                   "bombus_richness",
+                   "native_bee_abundance*status",
+                   "impatiens_abundance*status",
+                   "prop_blueberry",
+                   "prop_edge",
+                   "landscape_shdi",
+                   "caste",
+                   "julian_date",
+                   "I(julian_date^2)",
+                   "(1|sample_pt)",
+                   "(1|subsite)",
+                   "(1|gr(final_id,cov = studycov))"
+)
+
 ## **********************************************************
 ## Random effects of phylogeny
 ## **********************************************************
@@ -132,22 +148,34 @@ formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
                                         xvars.fv.base)
 
+#with interactions
+formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
+                                            "hascrithidia", 
+                                            xvars.fv.inter)
+formula.allnos.inter <-  runParasiteModels(fvimp_brmsdf,
+                                          "hasnosema", 
+                                          xvars.fv.inter)
+formula.apicystis.inter <-  runParasiteModels(fvimp_brmsdf,
+                                             "apicystis", 
+                                             xvars.fv.inter)
+
+#convert to brms format
 bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 
-## convert to brms format
-bf.allcrith.base <- bf(formula.allcrith.base, family="bernoulli")
-bf.allnos.base <- bf(formula.allnos.base, family="bernoulli")
-bf.api.base <- bf(formula.apicystis.base, family="bernoulli")
+# rerun depending on whether using interactions or not
+bf.allcrith <- bf(formula.allcrith.inter, family="bernoulli")
+bf.allnos <- bf(formula.allnos.base, family="bernoulli")
+bf.api <- bf(formula.apicystis.inter, family="bernoulli")
 
 
-bform.par <- bf.allcrith.base + bf.allnos.base + bf.api.base +
+bform.par <- bf.allcrith + bf.allnos + bf.api +
   set_rescor(FALSE)
 bform.base <-  bf.brich + bf.babund + bf.iabund +
   set_rescor(FALSE)
 bform.all <-  bf.brich + bf.babund + bf.iabund + 
-  bf.allcrith.base + bf.allnos.base + bf.api.base +
+  bf.allcrith + bf.allnos + bf.api +
   set_rescor(FALSE)
 
 
@@ -160,13 +188,20 @@ prior <- c(set_prior("normal(0, 1)", class = "b",
 
 ## run model without interactions
 
-fit.bombus.all <- brm(bf.brich, fvimp_brmsdf,
-                              cores=3,
+#this will likely not run on brms 2.22.0
+#not entirely sure why but gradient evaluation on the beta binomial
+#becomes EXTREMELY slow
+#run on brms version 2.20.4 (and make sure the c++ file is 
+#properly recompiled when you switch over...otherwise it will still
+#be slow. this makes me think it's a difference in how the model
+#gets specified in stan...?)
+fit.bombus.crith <- brm(bf.allcrith, fvimp_brmsdf,
+                              cores=4,
                               iter = (10^4),
-                              chains = 3,
+                              chains = 4,
                               thin=1,
+                              #prior = prior("normal(0,1)", coef = "native_bee_abundance:statusnonnative"),
                               init=0,
-                              force_recompile = TRUE,
                               control = list(adapt_delta = 0.999,
                                              stepsize = 0.001,
                                              max_treedepth = 20),
@@ -175,26 +210,119 @@ fit.bombus.all <- brm(bf.brich, fvimp_brmsdf,
 
 
 
-write.ms.table(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
-save(fit.bombus.all.beta.base, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv_beerichbeta.Rdata")
+write.ms.table(fit.bombus.all, "AllModels_fv")
+save(fit.bombus.all, fvimp_brmsdf, orig.spec,
+     file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv.Rdata")
 
 load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_beerichbeta.Rdata")
+plot.res(fit.bombus.nos.inter, "Nosema_interaction_manualprior")
 
-plot.res(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
+summary(fit.bombus.all)
+bayes_R2(fit.bombus.all)
 
-summary(fit.all.base.brichnb)
+plot(pp_check(fit.bombus.all, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.all, resp="bombusrichness"))
+plot(pp_check(fit.bombus.all, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.all, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.all, resp = "hasnosema"))
+plot(pp_check(fit.bombus.all, resp = "apicystis"))
 
-bayes_R2(fit.bombus.all.beta)
 
-plot(pp_check(fit.bombus.all.base, resp="floraldiversity"))
-plot(pp_check(fit.bombus.all.base, resp="floralabundance"))
-plot(pp_check(fit.bombus.all.base, resp="nativebeeabundance"))
-plot(pp_check(fit.all.base.brichnb, resp="bombusrichness"))
-plot(pp_check(fit.bombus.all.base, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.all.base, resp = "hascrithidia"))
-plot(pp_check(fit.bombus.all.base, resp = "hasnosema"))
-plot(pp_check(fit.bombus.all.base, resp = "apicystis"))
+#run models with interactions
+## run model without interactions
+
+#this will likely not run on brms 2.22.0
+#not entirely sure why but gradient evaluation on the beta binomial
+#becomes EXTREMELY slow
+#run on brms version 2.20.4 (and make sure the c++ file is 
+#properly recompiled when you switch over...otherwise it will still
+#be slow. this makes me think it's a difference in how the model
+#gets specified in stan...?)
+fit.bombus.inter <- brm(bform.all, fvimp_brmsdf,
+                      cores=4,
+                      iter = (10^4),
+                      chains = 4,
+                      thin=1,
+                      init=0,
+                      control = list(adapt_delta = 0.999,
+                                     stepsize = 0.001,
+                                     max_treedepth = 20),
+                      data2 = list(studycov = studycov)
+)
+
+
+
+write.ms.table(fit.bombus.inter, "AllModels_fv_inter")
+save(fit.bombus.inter, fvimp_brmsdf, orig.spec,
+     file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_inter.Rdata")
+
+load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_inter.Rdata")
+plot.res(fit.bombus.inter, "AllModels_fv_inter")
+
+summary(fit.bombus.inter)
+bayes_R2(fit.bombus.inter)
+
+plot(pp_check(fit.bombus.inter, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.inter, resp="bombusrichness"))
+plot(pp_check(fit.bombus.inter, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.inter, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.inter, resp = "hasnosema"))
+plot(pp_check(fit.bombus.inter, resp = "apicystis"))
+
+
+
+## **********************************************************
+## Fit Nosema models on just native bees
+## **********************************************************
+native_fv = fvimp_brmsdf %>% filter(subsetPar == TRUE, final_id != "Bombus_impatiens")
+
+fit.native.nosema <- brm(bf.allnos, native_fv,
+                        cores=4,
+                        iter = (10^4),
+                        chains = 4,
+                        thin=1,
+                        init=0,
+                        control = list(adapt_delta = 0.999,
+                                       stepsize = 0.001,
+                                       max_treedepth = 20),
+                        data2 = list(studycov = studycov)
+)
+summary(fit.native.nosema)
+write.ms.table(fit.native.nosema, "Nosema_nativebombus")
+
+## **********************************************************
+## Model Checks with DHARMa
+## **********************************************************
+check_brms <- function(model,             # brms model
+                       integer = TRUE,   # integer response? (TRUE/FALSE)
+                       plot = TRUE,       # make plot?
+                       ...                # further arguments for DHARMa::plotResiduals
+) {
+  mdata <- brms::standata(model)
+  if (!"Y" %in% names(mdata))
+    stop("Cannot extract the required information from this brms model")
+  dharma.obj <- DHARMa::createDHARMa(
+    simulatedResponse = t(brms::posterior_predict(model, ndraws = 1000)),
+    observedResponse = mdata$Y,
+    fittedPredictedResponse = apply(
+      t(brms::posterior_epred(model, ndraws = 1000, re.form = NA)),
+      1,
+      mean),
+    integerResponse = integer)
+  if (isTRUE(plot)) {
+    plot(dharma.obj, ...)
+  }s
+  invisible(dharma.obj)
+}
+
+
+## looks good!
+checked.crith.base <- check_brms(fit.bombus.crith)
+checked.nos.base <- check_brms(fit.bombus.nos.inter)
+checked.api.base <- check_brms(fit.bombus.api.inter)
+## looks good!
+testDispersion(checked.api.base)
+
 
 
 
@@ -234,17 +362,23 @@ remove_subset_other_formula <- function(form){
 
 
 #run frequentist checks for parasite models
-run_plot_freq_model_diagnostics(remove_subset_parasite_formula(formula.allcrith.base),
+run_plot_freq_model_diagnostics(remove_subset_parasite_formula(formula.allnos.inter),
                                 this_data=fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE,],
                                 this_family="bernoulli", site.lat="site")
-#impatiens_abundance VIF becomes intermediate for apicystis interaction model (which we already know is not great)
-#still big error bars on nosema interaction VIF still (and binned residuals are worse?)
+#still big error bars on nosema interaction VIF still
 
-#run frequentist checks for models including impatiens
-run_plot_freq_model_diagnostics(remove_subset_imp_formula(formula.bee.div),
-                                  this_data=fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE,],
-                                  this_family="negbinomial", site.lat="site")
-
+#run frequentist checks for bombus richness
+fvimp_brmsdf$totalspecies = 9
+m1 <- glmmTMB(
+  bombus_richness / totalspecies ~ floral_abundance + floral_diversity +
+    prop_blueberry + prop_edge + landscape_shdi + 
+    julian_date + I(julian_date^2) +
+    (1|sample_pt),  # Predictors and random effect
+  weights = totalspecies,  # Total number of species possible
+  family = betabinomial,
+  data = fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE,]
+)
+diagnostic.plots <- plot(check_model(m1, panel = TRUE))
 
 #run frequentist checks for floral/native bee abundance models
 run_plot_freq_model_diagnostics(remove_subset_other_formula(formula.bee.abund),
