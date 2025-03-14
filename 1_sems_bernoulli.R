@@ -9,7 +9,7 @@ setwd("~/Documents/UBC/Bombus Project/fvimpatiens_parasites")
 rm(list=ls())
 
 ## set to the number of cores you would like the models to run on
-ncores <- 3
+ncores <- 4
 
 fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 source("src/init.R")
@@ -66,10 +66,10 @@ fvimp_brmsdf <- prepDataSEM_bernoulli(spec.data = fvimp_brmsdf,
 
 
 formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
-                             prop_blueberry + prop_edge + landscape_shdi +
                               floral_abundance + floral_diversity +
-                             julian_date + I(julian_date^2) +
-                             (1|sample_pt)
+                              prop_blueberry + prop_edge + landscape_shdi + 
+                              julian_date + I(julian_date^2) +
+                              (1|sample_pt)
 )
 
 
@@ -140,9 +140,16 @@ bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 bf.allcrith.base <- bf(formula.allcrith.base, family="bernoulli")
 bf.allnos.base <- bf(formula.allnos.base, family="bernoulli")
 bf.api.base <- bf(formula.apicystis.base, family="bernoulli")
-bform.base <-  bf.brich + bf.babund + bf.iabund + 
+
+
+bform.par <- bf.allcrith.base + bf.allnos.base + bf.api.base +
+  set_rescor(FALSE)
+bform.base <-  bf.brich + bf.babund + bf.iabund +
+  set_rescor(FALSE)
+bform.all <-  bf.brich + bf.babund + bf.iabund + 
   bf.allcrith.base + bf.allnos.base + bf.api.base +
   set_rescor(FALSE)
+
 
 
 ##set priors for pesky interaction term
@@ -152,14 +159,14 @@ prior <- c(set_prior("normal(0, 1)", class = "b",
 
 
 ## run model without interactions
-fit.bombus <- brm(bform.base, fvimp_brmsdf,
-                              cores=4,
+
+fit.bombus.all <- brm(bf.brich, fvimp_brmsdf,
+                              cores=3,
                               iter = (10^4),
-                              chains = 4,
+                              chains = 3,
                               thin=1,
                               init=0,
-                              save_pars = save_pars(all = TRUE),
-                              open_progress = FALSE,
+                              force_recompile = TRUE,
                               control = list(adapt_delta = 0.999,
                                              stepsize = 0.001,
                                              max_treedepth = 20),
@@ -172,7 +179,7 @@ write.ms.table(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
 save(fit.bombus.all.beta.base, fvimp_brmsdf, orig.spec,
      file="saved/AllModels_fv_beerichbeta.Rdata")
 
-load(file="saved/AllModels_fv_beerichbeta.Rdata")
+load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_beerichbeta.Rdata")
 
 plot.res(fit.bombus.all.beta.base, "AllModels_fv_beerichbeta")
 
