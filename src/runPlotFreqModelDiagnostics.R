@@ -11,7 +11,8 @@ run_plot_freq_model_diagnostics <- function(this_formula, #brms model formula
                                             this_family, #model family
                                             fig.path =
                                             "figures/diagnostics",
-                                            site.lat="lat", ...
+                                            site.lat="lat",
+                                            trials = NULL, ...
                                             ){
 
     
@@ -88,6 +89,11 @@ run_plot_freq_model_diagnostics <- function(this_formula, #brms model formula
     }else if (this_family=='bernoulli') {
         this_model_output <- glmmTMB(this_formula, data=this_data, family='binomial')
         diagnostic.plots <- plot(check_model(this_model_output, panel = TRUE))
+        
+        
+    }else if (this_family=='beta_binomial') {
+      this_model_output <- glmmTMB(this_formula, data=this_data, family='betabinomial', weights = trials)
+      diagnostic.plots <- plot(check_model(this_model_output, panel = TRUE))
         
         
 
