@@ -102,8 +102,7 @@ xvars.fv.base <- c("floral_abundance",
                     "caste",
                     "julian_date",
                     "I(julian_date^2)",
-                    "(1|sample_pt)",
-                   "(1|subsite)",
+                    "(1|subsite/sample_pt)",
                    "(1|gr(final_id,cov = studycov))"
                  )
 
@@ -118,8 +117,7 @@ xvars.fv.inter <- c("floral_abundance",
                    "caste",
                    "julian_date",
                    "I(julian_date^2)",
-                   "(1|sample_pt)",
-                   "(1|subsite)",
+                   "(1|subsite/sample_pt)",
                    "(1|gr(final_id,cov = studycov))"
 )
 
@@ -165,9 +163,9 @@ bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 
 # rerun depending on whether using interactions or not
-bf.allcrith <- bf(formula.allcrith.inter, family="bernoulli")
+bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
 bf.allnos <- bf(formula.allnos.base, family="bernoulli")
-bf.api <- bf(formula.apicystis.inter, family="bernoulli")
+bf.api <- bf(formula.apicystis.base, family="bernoulli")
 
 
 bform.par <- bf.allcrith + bf.allnos + bf.api +
@@ -311,79 +309,17 @@ check_brms <- function(model,             # brms model
     integerResponse = integer)
   if (isTRUE(plot)) {
     plot(dharma.obj, ...)
-  }s
+  }
   invisible(dharma.obj)
 }
 
 
-## looks good!
 checked.crith.base <- check_brms(fit.bombus.crith)
-checked.nos.base <- check_brms(fit.bombus.nos.inter)
+checked.nos.base <- check_brms(fit.bombus.nos)
 checked.api.base <- check_brms(fit.bombus.api.inter)
-## looks good!
-testDispersion(checked.api.base)
 
-
-
-
-## **********************************************************
-## Frequentist Model Checks
-## **********************************************************
-
-#formulas to remove subset from parasite & bee models
-remove_subset_parasite_formula <- function(form){
-  char.form <- as.character(form)
-  no.sub <-
-    gsub("\\| subset\\(subsetPar}*\\)",
-         "", char.form[2])
-  no.group <-
-    gsub("\\(1 \\| gr\\(final_id, cov = studycov\\)\\)", "\\(1 \\| final_id\\)", char.form[3])
-  form.out <- formula(paste(no.sub, "~", no.group))
-  return(form.out)
-}
-
-remove_subset_imp_formula <- function(form){
-  char.form <- as.character(form)
-  no.sub <-
-    gsub("\\| subset\\(impSubset}*\\)",
-         "", char.form[2])
-  form.out <- formula(paste(no.sub, "~", char.form[3]))
-  return(form.out)
-}
-
-remove_subset_other_formula <- function(form){
-  char.form <- as.character(form)
-  no.sub <-
-    gsub("\\| subset\\(Subset}*\\)",
-         "", char.form[2])
-  form.out <- formula(paste(no.sub, "~", char.form[3]))
-  return(form.out)
-}
-
-
-#run frequentist checks for parasite models
-run_plot_freq_model_diagnostics(remove_subset_parasite_formula(formula.allnos.inter),
-                                this_data=fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE,],
-                                this_family="bernoulli", site.lat="site")
-#still big error bars on nosema interaction VIF still
-
-#run frequentist checks for bombus richness
-fvimp_brmsdf$totalspecies = 9
-m1 <- glmmTMB(
-  bombus_richness / totalspecies ~ floral_abundance + floral_diversity +
-    prop_blueberry + prop_edge + landscape_shdi + 
-    julian_date + I(julian_date^2) +
-    (1|sample_pt),  # Predictors and random effect
-  weights = totalspecies,  # Total number of species possible
-  family = betabinomial,
-  data = fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE,]
-)
-diagnostic.plots <- plot(check_model(m1, panel = TRUE))
-
-#run frequentist checks for floral/native bee abundance models
-run_plot_freq_model_diagnostics(remove_subset_other_formula(formula.bee.abund),
-                                this_data=fvimp_brmsdf[fvimp_brmsdf$Subset == TRUE,],
-                                this_family="negbinomial", site.lat="site")
+testZeroInflation(checked.nos.base)
+testQuantiles(checked.nos.base)
 
 
 
