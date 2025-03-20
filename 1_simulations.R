@@ -1,17 +1,6 @@
 ## Script started: March 15, 2025
 
-# Took Lizzie Wolkovich's Bayesian hierarchical modeling class and if I learned one thing
-# it's that there's no point in being Bayesian if I'm not gonna simulate, simulate, simulate.
-# Given how far I was into analyzing this dataset, I was like "eh, I'll do it next time."
-# But then I had a conversation with one of Lizzie's students, and it occurred to me that
-# I would never show this monstrosity of a model output to Lizzie without checking that it actually works.
-
-# And then I was like....but you would show it to the rest of the scientific community?? with your name on it??? for forever????
-
-#So here we are...
-
-
-# The first thing I will do (most pressing) is simulate data to see how often its
+# Simulate data to see how often
 # DHARMa residuals fail a KS test (or test of quantile deviations). This will be
 # especially useful because my parasite models DO fail this test, although the magnitude
 # of the deviation is (visually) minor.
