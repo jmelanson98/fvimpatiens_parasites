@@ -13,9 +13,8 @@ load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_pa
 
 # save and/or load conditional effects
 save(all.cond.effects, all.cond.effects.interaction,
-file="saved/conditional_effects.Rdata")
-load(file="saved/conditional_effects.Rdata")
-
+file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/conditional_effects.Rdata")
+load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/conditional_effects.Rdata")
 
 ## *********************************************************************************
 ## Prepping conditional effects and axis labels -- veg & native bee abundance models
@@ -25,7 +24,7 @@ new.orig <- orig.spec[fvimp_brmsdf$Subset == TRUE, ]
 
 # calculate all conditional effects
 # only run this code if you don't have conditional effects Rdata saved -- it's slow
-all.cond.effects <- conditional_effects(fit.bombus.all)
+#all.cond.effects <- conditional_effects(fit.bombus.all)
 
 #create axis values for standardized variables
 labs.doy <- (pretty(new.orig$julian_date, n=8))
@@ -180,8 +179,8 @@ babun.doy <-
   
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = native_bee_abundance)) +
-  geom_jitter(cex = 2, alpha = 0.2, height = 0.2, width = 0.2) +
-  labs(x = "Day of Year", y = "Native *Bombus* abundance") +
+  geom_jitter(cex = 2, alpha = 0.2, height = 0.05, width = 0.05) +
+  labs(x = "Julian date", y = "Native *Bombus* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -328,7 +327,7 @@ brich.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Proportion edge area", y = "") +
+  labs(x = "Edge density", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -358,7 +357,7 @@ brich.doy <-
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.2, width = 0.2) +
-  labs(x = "Day of year", y = "*Bombus* species richness") +
+  labs(x = "Julian date", y = "*Bombus* species richness") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -506,8 +505,8 @@ iabund.doy <-
   
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = impatiens_abundance)) +
-  geom_jitter(cex = 2, alpha = 0.2, height = 0.2, width = 0.2) +
-  labs(x = "Day of year", y = "*B*. *impatiens* abundance") +
+  geom_jitter(cex = 2, alpha = 0.2, height = 0.05, width = 0.05) +
+  labs(x = "Julian date", y = "*B*. *impatiens* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -527,22 +526,9 @@ iabund.doy
 
 
 ## ***********************************************************************
-## prepping axis labels -- parasitism models
+## Parasitism Models
 ## ***********************************************************************
 data.par <- fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE, ]
-
-#for plotting raw data as rates
-data.par %>% 
-  group_by(sample_id, final_id,status) %>%
-  summarize(site_hascrithidia = sum(hascrithidia)/n(),
-            site_hasnosema = sum(hasnosema)/n(),
-            site_apicystis = sum(apicystis)/n(),
-            impatiens_abundance = mean(impatiens_abundance),
-            prop_blueberry = mean(prop_blueberry),
-            julian_date = mean(julian_date),
-            floral_diversity = mean(floral_diversity),
-            native_bee_abundance = mean(native_bee_abundance),
-            numbees = n()) -> site_rates
 
 ## ***********************************************************************
 ## has crithidia ~ impatiens abundance
@@ -590,7 +576,7 @@ hascrith.doy <-
   
   #plot raw data
   geom_jitter(data = data.par, aes(x=julian_date,y = hascrithidia), alpha = 0.2, height = 0.02) +
-  labs(x = "Day of year", y = "*Crithidia spp.* prevalence") +
+  labs(x = "Julian date", y = "*Crithidia spp.* prevalence") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(breaks = axis.doy,
@@ -607,7 +593,8 @@ hascrith.doy
 ## has crithidia ~ status * impatiens abundance
 ## ***********************************************************************
 # calculate all conditional effects
-all.cond.effects.interaction <- conditional_effects(fit.bombus.inter)
+# only run this line of code if you don't have condition effects saved, it's slow:
+#all.cond.effects.interaction <- conditional_effects(fit.bombus.inter)
 
 hascrith <-
   all.cond.effects.interaction[["hascrithidia.hascrithidia_impatiens_abundance:status"]]
@@ -626,7 +613,7 @@ hascrith.imp.status <-
   
   #plot raw data
   #geom_jitter(data = data.par, aes(x=impatiens_abundance,y = hascrithidia), height = 0.05) +
-  labs(x = "", y = "") +
+  labs(x = "*B. impatiens* abundance", y = "*Crithidia spp.* prevalence") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(limits = c(0,11)) +
@@ -656,9 +643,10 @@ hascrith.babund.status <-
   
   #plot raw data
   #geom_jitter(data = site_rates, aes(x=native_bee_abundance,y = site_hascrithidia, cex = numbees)) +
-  labs(x = "", y = "*Crithidia spp.* prevalence") +
+  labs(x = "Native *Bombus* abundance", y = "*Crithidia spp.* prevalence") +
   theme_ms() +
-  theme(legend.position = "none") +
+  theme(legend.position = "right") +
+  scale_alpha(guide = "none") +
   scale_x_continuous() +
   scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
@@ -674,6 +662,14 @@ hascrith.babund.status <-
   size=12)
 
 hascrith.babund.status
+
+#save legend for plot grid
+g <- ggplotGrob(hascrith.babund.status)
+legend_index <- which(g$layout$name == "guide-box-right")
+interaction_legend <- g$grobs[[legend_index]]
+
+# remove legend from plot
+hascrith.babund.status <- hascrith.babund.status + theme(legend.position = "none")
 
 ## ***********************************************************************
 ## has nosema ~ impatiens abundance
@@ -699,15 +695,7 @@ hasnosema.imp <-
   scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16)) #+
-  geom_text(data = data.frame(
-    x = c(9),
-    y = c(1.1),
-    label = c("***p > 0 = 0.99")
-  ), aes(x=x, y=y, label=label),
-  color = "black",
-  fontface = "bold",
-  size=4)
+        text = element_text(size=16))
 
 hasnosema.imp
 
@@ -723,7 +711,7 @@ hasnosema.doy <-
   #plot raw data
   ggplot(data = data.par, aes(x=julian_date, y = hasnosema)) +
   geom_jitter(alpha = 0.2, height = 0.02) +
-  labs(x = "Day of year", y = "*Vairimorpha spp.* prevalence") +
+  labs(x = "Julian date", y = "*Vairimorpha spp.* prevalence") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(breaks = axis.doy,
@@ -732,105 +720,8 @@ hasnosema.doy <-
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
-  
-  
-  #nosema ~ doy without raw data
-  #plot model prediction with credible interval
-  hasnosema.doy = ggplot(hasnosema, aes(x = julian_date, y = estimate__)) + 
-    geom_line(aes(x = julian_date, y=estimate__), linetype = "dashed") +
-    geom_ribbon(aes(ymin = lower__, ymax = upper__,
-                    alpha=0.5), fill = "gray") +
-    labs(x = "Day of year", y = "*Vairimorpha spp.* prevalence") +
-    theme_ms() +
-    theme(legend.position = "none") +
-    scale_x_continuous(limits = c(-0.5,11)) +
-    scale_y_continuous(limits = c(0,1)) +
-    theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
-          axis.title.y = ggtext::element_markdown(size=16),
-          text = element_text(size=16))
 
 hasnosema.doy
-
-
-## ***********************************************************************
-## has nosema ~ status * impatiens abundance
-## ***********************************************************************
-hasnosema <-
-  all.cond.effects.interaction[["hasnosema.hasnosema_impatiens_abundance:status"]]
-
-#ggplot
-hasnosema.imp.status <- 
-  
-  #plot model prediction with credible interval
-  ggplot(hasnosema, aes(x = impatiens_abundance, y = estimate__, color = status)) + 
-  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
-                  alpha=1)) +
-  geom_line(aes(x = impatiens_abundance, y=estimate__), linewidth = 1.5) +
-  scale_fill_manual(values = c("black", "lightblue")) +
-  scale_color_manual(values = c("black", "lightblue")) +
-  
-  #plot raw data
-  #geom_jitter(data = data.par, aes(x=impatiens_abundance,y = hasnosema), height = 0.02, width = 0.2) +
-  labs(x = "*B*. *impatiens* abundance", y = "") +
-  theme_ms() +
-  theme(legend.position = "none") +
-  scale_x_continuous(limits = c(0,11)) +
-  scale_y_continuous() +
-  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
-        axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16))
-
-hasnosema.imp.status
-
-## ***********************************************************************
-## has nosema ~ status * native bee abundance
-## ***********************************************************************
-hasnosema <-
-  all.cond.effects.interaction[["hasnosema.hasnosema_native_bee_abundance:status"]]
-hasnosema = hasnosema %>% filter((status != "nonnative") | (native_bee_abundance <= max(data.par$native_bee_abundance[data.par$final_id == "Bombus_impatiens"])))
-
-
-#ggplot
-hasnosema.babund.status <- 
-  
-  #plot model prediction with credible interval
-  ggplot(hasnosema, aes(x = native_bee_abundance, y = estimate__, color = status)) + 
-  geom_ribbon(aes(ymin = lower__, ymax = upper__, fill = status,
-                  alpha=1)) +
-  geom_line(aes(x = native_bee_abundance, y=estimate__), linewidth = 1.5) +
-  scale_fill_manual(values = c("black", "lightblue")) +
-  scale_color_manual(values = c("black", "lightblue")) +
-  
-  #plot raw data
-  #geom_jitter(data = site_rates, aes(x=native_bee_abundance,y = site_hasnosema, cex = numbees)) +
-  labs(x = "Native *Bombus* abundance", y = "*Vairimorpha spp.* prevalence", fill = "Prevalence in", color = "Prevalence in") +
-  theme_ms() +
-  theme(legend.position = "none") +
-  scale_x_continuous() +
-  scale_y_continuous() +
-  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
-        axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16)) +
-  theme(legend.title = element_text(hjust = 0.5), legend.position = "bottom") +
-  guides(fill = guide_legend(title = "Prevalence in"), size = "none", shape = "none", alpha = "none") +
-  geom_text(data = data.frame(
-    x = c(35),
-    y = c(1.1),
-    label = c("**")
-  ), aes(x=x, y=y, label=label),
-  color = "black",
-  fontface = "bold",
-  size=12)
-
-hasnosema.babund.status
-
-g <- ggplotGrob(hasnosema.babund.status)
-legend_index <- which(g$layout$name == "guide-box")
-shared_legend <- g$grobs[[17]]
-
-# Remove legends from all plots
-hasnosema.babund.status <- hasnosema.babund.status + theme(legend.position = "none")
-
 
 
 ## ***********************************************************************
@@ -850,7 +741,7 @@ apicystis.doy <-
   
   #plot raw data
   geom_jitter(data = data.par, aes(x=julian_date,y = apicystis), height = 0.02, alpha = 0.2) +
-  labs(x = "Day of year", y = "*Apicystis spp.* prevalence") +
+  labs(x = "Julian date", y = "*Apicystis spp.* prevalence") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(breaks = axis.doy,
@@ -901,24 +792,6 @@ apicystis.fdiv
 apicystis <-
   all.cond.effects[["apicystis.apicystis_impatiens_abundance"]]
 
-#apicytis without raw data
-#plot model prediction with credible interval
-apicystis.imp = ggplot(apicystis, aes(x = impatiens_abundance, y = estimate__)) + 
-  geom_line(aes(x = impatiens_abundance, y=estimate__), linetype = "dashed") +
-  geom_ribbon(aes(ymin = lower__, ymax = upper__,
-                  alpha=0.5), fill = "gray") +
-  labs(x = "", y = "*Apicystis spp.* prevalence") +
-  theme_ms() +
-  theme(legend.position = "none") +
-  scale_x_continuous(limits = c(-0.5,11)) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
-        axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16)) #+
-apicystis.imp
-
-
-#apicystis with raw data
 apicystis.imp <- 
   
   #plot raw data
@@ -939,13 +812,6 @@ apicystis.imp <-
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) 
 apicystis.imp
-g <- ggplotGrob(apicystis.imp)
-legend_index <- which(g$layout$name == "guide-box")
-shared_legend <- g$grobs[[17]]
-
-# Remove legends from all plots
-apicystis.imp <- apicystis.imp + theme(legend.position = "none")
-
 
 ## ***********************************************************************
 ## effect of caste on prevalence of all 3 parasites
@@ -997,84 +863,105 @@ bombusgrid = grid.arrange(babun.fabun, babun.fdiv, babun.bberry, babun.edge,
                           iabund.fabund, iabund.fdiv, iabund.bberry, iabund.edge,
                           brich.fabund, brich.fdiv, brich.bberry, brich.edge,
                           ncol = 4)
-#add subplot labels
-final_plot <- ggdraw() +
+#add labels
+bombusgrid <- ggdraw() +
   draw_plot(bombusgrid, 0.015, 0, 1, 1) +
   draw_plot_label(c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"), 
                   x = c(0.01, 0.26, 0.51, 0.76, 0.01, 0.26, 0.51, 0.76, 0.01, 0.26, 0.51, 0.76), 
                   y = c(0.97, 0.97, 0.97, 0.97, 0.64, 0.64, 0.64, 0.64, 0.3, 0.3, 0.3, 0.3))
-print(final_plot)
-#export width 1500, height 1000
 
+#export and save
+ggsave(filename = "figures/manuscript_figures/bombusgrid.jpg", 
+       plot = bombusgrid, 
+       width = 4000, 
+       height = 3500, 
+       units = "px")
 
 #FIGURE S3: bee community phenology
-doybeegrid = grid.arrange(babun.doy, iabund.doy, brich.doy, ncol = 3)
-#add subplot labels
-final_plot <- ggdraw() +
+bombusdoy = grid.arrange(babun.doy, iabund.doy, brich.doy, ncol = 3)
+
+#add labels
+bombusdoy <- ggdraw() +
   draw_plot(doybeegrid, 0.015, 0, 1, 1) +
   draw_plot_label(c("a", "b", "c"), 
                   x = c(0.02, 0.35, 0.68), 
                   y = c(0.97, 0.97, 0.97))
+#save and export
+ggsave(filename = "figures/manuscript_figures/bombusdoy.jpg", 
+       plot = bombusdoy, 
+       width = 4500, 
+       height = 1500, 
+       units = "px")
 
 
 #FIGURE 4: impatiens effects on parasite prevalence
-impatiensparasitegrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp,
+impatiensgrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp,
                                      ncol = 3)
-#add subplot labels
-final_plot <- ggdraw() +
-  draw_plot(impatiensparasitegrid, 0.015, 0, 1, 1) +
+#add labels
+impatiensgrid <- ggdraw() +
+  draw_plot(impatiensgrid, 0.015, 0, 1, 1) +
   draw_plot_label(c("a", "b", "c"), 
-                  x = c(0, 0.33, 0.67), 
-                  y = c(1, 1, 1))
-#y = c(0.97, 0.73, 0.48))
-print(final_plot)
-#export width 1500, height 1000
+                  x = c(0.02, 0.35, 0.68), 
+                  y = c(0.97, 0.97, 0.97))
+#save and export
+ggsave(filename = "figures/manuscript_figures/impatiensgrid.jpg", 
+       plot = impatiensgrid, 
+       width = 4500, 
+       height = 1500, 
+       units = "px")
 
 
-#impatiens vs parasites (vertical)
-impatiensparasitegrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp, #shared_legend,
-                                     ncol = 1)
-#add subplot labels
-final_plot <- ggdraw() +
-  draw_plot(impatiensparasitegrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c"), 
-                  x = c(0, 0, 0), 
-                  y = c(0.95, 0.62, 0.3))
-#y = c(0.97, 0.73, 0.48))
-print(final_plot)
-
+# #impatiens vs parasites (vertical)
+# impatiensparasitegrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp, #shared_legend,
+#                                      ncol = 1)
+# #add subplot labels
+# final_plot <- ggdraw() +
+#   draw_plot(impatiensparasitegrid, 0.015, 0, 1, 1) +
+#   draw_plot_label(c("a", "b", "c"), 
+#                   x = c(0, 0, 0), 
+#                   y = c(0.95, 0.62, 0.3))
+# #y = c(0.97, 0.73, 0.48))
+# print(final_plot)
 
 
 #FIGURE S6: parasite phenology
-doyparasitegrid = grid.arrange(hascrith.doy, hasnosema.doy, apicystis.doy, ncol = 3)
-#add subplot labels
-final_plot <- ggdraw() +
-  draw_plot(doyparasitegrid, 0.015, 0, 1, 1) +
+parasitedoy = grid.arrange(hascrith.doy, hasnosema.doy, apicystis.doy, ncol = 3)
+
+#add labels
+parasitedoy <- ggdraw() +
+  draw_plot(parasitedoy, 0.015, 0, 1, 1) +
   draw_plot_label(c("a", "b", "c"), 
                   x = c(0, 0.34, 0.68), 
                   y = c(0.97, 0.97, 0.97))
                   #y = c(0.97, 0.73, 0.48)) #if there's a legend
-print(final_plot)
-
+#save and export
+ggsave(filename = "figures/manuscript_figures/parasitedoy.jpg", 
+       plot = parasitedoy, 
+       width = 4500, 
+       height = 1500, 
+       units = "px")
 
 
 #FIGURE 5: interaction plots for crithidia
-#redo this plot
-interactiongrid <- grid.arrange(
+crithinteraction <- grid.arrange(
   arrangeGrob(hascrith.babund.status, hascrith.imp.status,
-              ncol = 2), # 2x2 grid of plots
-  shared_legend, # Add the shared legend
+              ncol = 1),
+  interaction_legend, # Add the shared legend
   ncol = 1, # 1 column: grid on top, legend below
   heights = c(10, 1) # Adjust the relative heights
 )
 
-#add subplot labels
-final_plot <- ggdraw() +
-  draw_plot(interactiongrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c", "d"), 
-                  x = c(0.01, 0.51, 0.01, 0.51), 
-                  y = c(0.97, 0.97, 0.5, 0.5))
-#y = c(0.97, 0.73, 0.48))
-print(final_plot)
+#add labels
+crithinteraction <- ggdraw() +
+  draw_plot(crithinteraction, 0.015, 0, 1, 1) +
+  draw_plot_label(c("a", "b"), 
+                  x = c(0.01, 0.01), 
+                  y = c(0.97, 0.5))
+#add labels
+ggsave(filename = "figures/manuscript_figures/crithinteraction.jpg", 
+       plot = crithinteraction, 
+       width = 1500, 
+       height = 3000, 
+       units = "px")
 
 
