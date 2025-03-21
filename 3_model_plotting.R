@@ -1,4 +1,3 @@
-
 ## plotting based on tutorial:
 ## https://www.andrewheiss.com/blog/2021/11/10/ame-bayes-re-guide/#different-kinds-of-averCanopyBin-predictions-with-multilevel-models
 
@@ -7,7 +6,6 @@ rm(list=ls())
 source("src/ggplotThemes.R")
 source("src/init.R")
 source("src/misc.R")
-source("src/makeMapGrids.R")
 
 ## load model results and data
 load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv.Rdata")

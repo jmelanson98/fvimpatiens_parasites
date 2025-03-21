@@ -1,3 +1,12 @@
+## Create map grids of parasite intensity; plot semivariograms of raw data and model residuals
+
+setwd('/Users/jenna1/Documents/UBC/Bombus Project/fvimpatiens_parasites')
+rm(list=ls())
+source("src/ggplotThemes.R")
+source("src/init.R")
+source("src/misc.R")
+source("src/makeMapGrids.R")
+
 ## ***********************************************************************
 ## make map plots
 ## ***********************************************************************
