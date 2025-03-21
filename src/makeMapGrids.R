@@ -11,12 +11,12 @@ makeMapGrids <- function(groupedbysite,
   
   
   # Load raster files
-  westham_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/westham_masked.tif")
-  sd_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/sd_masked.tif")
-  ed_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/ed_masked.tif")
-  nr_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/nr_masked.tif")
-  hr_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/hr_masked.tif")
-  pm_basemap <- raster("/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/landscape/pm_masked.tif")
+  westham_basemap <- raster("data/zipped_clipped_rasters/westham_masked.tif")
+  sd_basemap <- raster("data/zipped_clipped_rasters/sd_masked.tif")
+  ed_basemap <- raster("data/zipped_clipped_rasters/ed_masked.tif")
+  nr_basemap <- raster("data/zipped_clipped_rasters/nr_masked.tif")
+  hr_basemap <- raster("data/zipped_clipped_rasters/hr_masked.tif")
+  pm_basemap <- raster("data/zipped_clipped_rasters/pm_masked.tif")
   
   #make input dataframe into an sf object
   site_sf <- st_as_sf(groupedbysite, coords = c("long", "lat"), crs = 4326)
