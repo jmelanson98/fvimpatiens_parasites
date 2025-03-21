@@ -6,6 +6,7 @@ source("src/ggplotThemes.R")
 source("src/init.R")
 source("src/misc.R")
 source("src/makeMapGrids.R")
+source("src/getPhyloMatrix.R")
 
 ## ***********************************************************************
 ## make map plots
@@ -14,7 +15,7 @@ source("src/makeMapGrids.R")
 #Parasite prevalence across sites
 #make a df where parasites are pooled at sample point
 data.workers = filter(data.par, caste == "worker")
-data.par %>% 
+data.workers %>% 
   group_by(sample_pt) %>%
   summarize(site_hascrithidia = sum(hascrithidia)/n(),
             site_hasnosema = sum(hasnosema)/n(),
@@ -25,119 +26,67 @@ data.par %>%
             lat = min(lat),
             numbees = n()) -> parbysite
 
-#make a df where surveys are pooled, but keep track of the number of survey events per transect
-fvimp_brmsdf %>%
-  filter(impSubset == TRUE) %>%
-  group_by(sample_pt) %>%
-  summarize(
-    site = min(site),
-    site_any = mean(impatiens_abundance),
-    long = min(long),
-    lat = min(lat),
-    numbees = n() #this is actually the number of survey events 
-    #but I'm giving it this name so I can change less code in my function
-  ) -> impatiensabundancepersite
+# #make a df where surveys are pooled, but keep track of the number of survey events per transect
+# fvimp_brmsdf %>%
+#   filter(impSubset == TRUE) %>%
+#   group_by(sample_pt) %>%
+#   summarize(
+#     site = min(site),
+#     site_any = mean(impatiens_abundance),
+#     long = min(long),
+#     lat = min(lat),
+#     numbees = n() #this is actually the number of survey events 
+#     #but I'm giving it this name so I can change less code in my function
+#   ) -> impatiensabundancepersite
+# 
+# #do this again but with native bee abundance as the "central" var
+# fvimp_brmsdf %>%
+#   filter(Subset == TRUE) %>%
+#   group_by(sample_pt) %>%
+#   summarize(
+#     site = min(site),
+#     site_any = mean(native_bee_abundance),
+#     long = min(long),
+#     lat = min(lat),
+#     numbees = n() #this is actually the number of survey events but I'm giving it this name so I can change less code below
+#   ) -> beeabundancepersite
 
-#do this again but with native bee abundance as the "central" var
-fvimp_brmsdf %>%
-  filter(Subset == TRUE) %>%
-  group_by(sample_pt) %>%
-  summarize(
-    site = min(site),
-    site_any = mean(native_bee_abundance),
-    long = min(long),
-    lat = min(lat),
-    numbees = n() #this is actually the number of survey events but I'm giving it this name so I can change less code below
-  ) -> beeabundancepersite
-
-makeMapGrids(groupedbysite = parbysite, 
+#note: if you're planning to run this code you need to UNZIP the file "zipped_clipped_rasters.zip"
+#i've compressed it to save space locally and so that it can be pushed to github
+#you will receive a warning that some rows are outside the scale range; don't worry about it
+parmap = makeMapGrids(groupedbysite = parbysite, 
              sampling_effort = "Number of\nspecimens", 
              var_of_interest = "Parasite\nprevalence")
 
+ggsave(filename = "figures/manuscript_figures/parasitemap.jpg", 
+       plot = parmap, 
+       width = 3000, 
+       height = 2000, 
+       units = "px")
+
 
 ## ***********************************************************************
-## variograms testing for spatial autocorrelation
+## Variograms testing for spatial autocorrelation
 ## ***********************************************************************
 fvimp_sub = filter(fvimp_brmsdf, impSubset == TRUE)
 fvimp_subpar = filter(fvimp_brmsdf, apidae ==1)
+studyspecies = c("Bombus_mixtus", "Bombus_flavifrons", "Bombus_rufocinctus", "Bombus_californicus", 
+                 "Bombus_impatiens", "Bombus_vosnesenskii", "Bombus_sitkensis", "Bombus_melanopygus", 
+                 "Bombus_nevadensis", "Bombus_medius")
+studycov = getPhyloMatrix(studyspecies)
 
-#calculate residuals for floral abundance (no predictors)
-fabun<- brm(
-  bf(floral_abundance ~ 1),
-  data = fvimp_sub,
-  family = student(),
-  chains = 1,
-  thin = 1,
-  init = 0,
-  cores = 1,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-fabun_resid <- as.data.frame(residuals(fabun))
-fvimp_sub$fabun_resid_nopred = fabun_resid$Estimate
-
-#calculate residuals for floral abundance (with predictors)
-fabun<- brm(
-  bf(floral_abundance ~ julian_date + I(julian_date^2) + (1|sample_pt)),
-  data = fvimp_sub,
-  family = student(),
-  chains = 1,
-  thin = 1,
-  init = 0,
-  cores = 1,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-fabun_resid <- as.data.frame(residuals(fabun))
-fvimp_sub$fabun_resid_pred = fabun_resid$Estimate
-
-#calculate residuals for floral diversity (with no predictors)
-fdiv <- brm(
-  bf(floral_diversity ~ 1),
-  data = fvimp_sub,
-  family = student(),
-  chains = 1,
-  thin = 1,
-  init = 0,
-  cores = 1,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-fdiv_resid <- as.data.frame(residuals(fdiv))
-fvimp_sub$fdiv_resid_nopred = fdiv_resid$Estimate
-
-#calculate residuals for floral diversity (predictors)
-fdiv <- brm(
-  bf(floral_diversity ~ julian_date + I(julian_date^2) + (1|sample_pt)),
-  data = fvimp_sub,
-  family = student(),
-  chains = 1,
-  thin = 1,
-  init = 0,
-  cores = 1,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-fdiv_resid <- as.data.frame(residuals(fdiv))
-fvimp_sub$fdiv_resid_pred = fdiv_resid$Estimate
-
-#calculate residuals for bombus diversity (no predictors)
+runSVmodels = function(fvimp_sub,
+                       fvimp_subpar,
+                       studycov){
+#calculate residuals for bombus richness (no predictors)
 brich <- brm(
   bf(bombus_richness | trials(9) ~ 1),
   data = fvimp_sub,
   family = beta_binomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -146,7 +95,7 @@ brich <- brm(
 brich_resid = as.data.frame(residuals(brich))
 fvimp_sub$brich_resid_nopred = brich_resid$Estimate
 
-#calculate residuals for bombus diversity (with predictors)
+#calculate residuals for bombus richness (with predictors)
 brich <- brm(
   bf(bombus_richness | trials(9) ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
@@ -154,10 +103,10 @@ brich <- brm(
        (1|sample_pt)),
   data = fvimp_sub,
   family = beta_binomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -171,10 +120,10 @@ babun <- brm(
   bf(native_bee_abundance ~ 1),
   data = fvimp_sub,
   family = negbinomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -191,10 +140,10 @@ babun <- brm(
        (1|sample_pt)),
   data = fvimp_sub,
   family = negbinomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -208,10 +157,10 @@ iabun <- brm(
   bf(impatiens_abundance ~ 1),
   data = fvimp_sub,
   family = negbinomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -228,10 +177,10 @@ iabun <- brm(
        (1|sample_pt)),
   data = fvimp_sub,
   family = negbinomial(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -250,10 +199,10 @@ hascrith <- brm(
   bf(hascrithidia ~ 1),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -266,15 +215,15 @@ fvimp_subpar$crith_resid_nopred = crith_resid$Estimate
 hascrith <- brm(
   bf(hascrithidia ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry +
+       prop_blueberry + prop_edge + landscape_shdi +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -289,10 +238,10 @@ hasapi <- brm(
   bf(apicystis ~ 1 ),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -305,15 +254,15 @@ fvimp_subpar$api_resid_nopred = api_resid$Estimate
 hasapi <- brm(
   bf(apicystis ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry +
+       prop_blueberry + prop_edge + landscape_shdi +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -328,10 +277,10 @@ hasnos <- brm(
   bf(hasnosema ~ 1 ),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -344,15 +293,15 @@ fvimp_subpar$nos_resid_nopred = nos_resid$Estimate
 hasnos <- brm(
   bf(hasnosema ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry +
+       prop_blueberry + prop_edge + landscape_shdi +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
   data = fvimp_subpar,
   family = bernoulli(),
-  chains = 1,
+  chains = 4,
   thin = 1,
   init = 0,
-  cores = 1,
+  cores = 4,
   open_progress = FALSE,
   control = list(adapt_delta = 0.999,
                  stepsize = 0.001,
@@ -362,10 +311,20 @@ hasnos <- brm(
 nos_resid <- as.data.frame(residuals(hasnos))
 fvimp_subpar$nos_resid_pred = nos_resid$Estimate
 
+
+return(list(fvimp_sub, fvimp_subpar))}
+
+
+dfs = runSVmodels(fvimp_sub = fvimp_sub,
+                  fvimp_subpar = fvimp_subpar,
+                  studycov = studycov)
+fvimp_sub_withresid = dfs[[1]]
+fvimp_subpar_withresid = dfs[[2]]
+
 #############################################
 ### save dataframe 
 #############################################
-save(fvimp_sub, fvimp_subpar,
+save(fvimp_sub_withresid, fvimp_subpar_withresid,
      file="saved/data_with_residuals.Rdata")
 
 load(file="saved/data_with_residuals.Rdata")
