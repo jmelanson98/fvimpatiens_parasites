@@ -314,18 +314,18 @@ fvimp_subpar$nos_resid_pred = nos_resid$Estimate
 
 return(list(fvimp_sub, fvimp_subpar))}
 
-
-dfs = runSVmodels(fvimp_sub = fvimp_sub,
-                  fvimp_subpar = fvimp_subpar,
-                  studycov = studycov)
-fvimp_sub_withresid = dfs[[1]]
-fvimp_subpar_withresid = dfs[[2]]
+#only run this code if models have changed -- otherwise load from .Rdata file
+# dfs = runSVmodels(fvimp_sub = fvimp_sub,
+#                   fvimp_subpar = fvimp_subpar,
+#                   studycov = studycov)
+# fvimp_sub_withresid = dfs[[1]]
+# fvimp_subpar_withresid = dfs[[2]]
 
 #############################################
 ### save dataframe 
 #############################################
-save(fvimp_sub_withresid, fvimp_subpar_withresid,
-     file="saved/data_with_residuals.Rdata")
+#save(fvimp_sub_withresid, fvimp_subpar_withresid,
+#     file="saved/data_with_residuals.Rdata")
 
 load(file="saved/data_with_residuals.Rdata")
 
@@ -334,56 +334,19 @@ load(file="saved/data_with_residuals.Rdata")
 #############################################
 
 # Convert the data frames into sf objects
-fvimp_sub <- st_as_sf(fvimp_sub, coords = c("long", "lat"), crs = 4326)
-fvimp_subpar <- st_as_sf(fvimp_subpar, coords = c("long", "lat"), crs = 4326)
+fvimp_sub_withresid <- st_as_sf(fvimp_sub_withresid, coords = c("long", "lat"), crs = 4326)
+fvimp_subpar_withresid <- st_as_sf(fvimp_subpar_withresid, coords = c("long", "lat"), crs = 4326)
 
 # Transform the coordinate reference system to EPSG:900913
-fvimp_sub900913 <- st_transform(fvimp_sub, crs = 3857)
-fvimp_subpar900913 <- st_transform(fvimp_subpar, crs = 3857)
+fvimp_sub900913 <- st_transform(fvimp_sub_withresid, crs = 3857)
+fvimp_subpar900913 <- st_transform(fvimp_subpar_withresid, crs = 3857)
 
 
 ############################################
 ### variograms with no predictors
 ############################################
 
-#make variogram for floral abundance
-v_fabun.resid.nopred <- variogram(fabun_resid_nopred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
-
-v_fabun.resid.nopred_plot = ggplot(as.data.frame(v_fabun.resid.nopred), aes(x = dist, y = gamma)) +
-  geom_point() +
-  geom_line() +
-  labs(
-    title = "Floral Abundance",
-    x = "",
-    y = "Semivariance"
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank()   # Remove minor gridlines
-  )
-v_fabun.resid.nopred_plot
-
-#make variogram for floral diversity
-v_fdiv.resid.nopred <- variogram(fdiv_resid_nopred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
-
-v_fdiv.resid.nopred_plot = ggplot(as.data.frame(v_fdiv.resid.nopred), aes(x = dist, y = gamma)) +
-  geom_point() +
-  geom_line() +
-  labs(
-    title = "Floral Diversity",
-    x = "",
-    y = "Semivariance"
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank()   # Remove minor gridlines
-  )
-v_fdiv.resid.nopred_plot
-
-
-#make variogram for bombus diversity
+#make variogram for bombus richness
 v_brich.resid.nopred <- variogram(brich_resid_nopred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
 
 v_brich.resid.nopred_plot = ggplot(as.data.frame(v_brich.resid.nopred), aes(x = dist, y = gamma)) +
