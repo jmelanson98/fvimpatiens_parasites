@@ -16,6 +16,7 @@ library(viridis)
 library(gridExtra)
 library(cowplot)
 library(modelr)
+library(grid)
 
 
 ## variograms + other spatial stuff
@@ -27,6 +28,7 @@ library(lme4)
 library(gstat)
 library(sp)
 library(glme)
+library(patchwork)
 
 ## trees
 library(phytools)
