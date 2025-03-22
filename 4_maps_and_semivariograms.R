@@ -465,42 +465,6 @@ v_nos.resid.nopred_plot
 #############################################
 ### variograms with predictors
 #############################################
-#make variogram for floral abundance
-v_fabun.resid.pred <- variogram(fabun_resid_pred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
-
-v_fabun.resid.pred_plot = ggplot(as.data.frame(v_fabun.resid.pred), aes(x = dist, y = gamma)) +
-  geom_point() +
-  geom_line() +
-  labs(
-    title = "",
-    x = "",
-    y = ""
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank()   # Remove minor gridlines
-  )
-v_fabun.resid.pred_plot
-
-#make variogram for floral diversity
-v_fdiv.resid.pred <- variogram(fdiv_resid_pred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
-
-v_fdiv.resid.pred_plot = ggplot(as.data.frame(v_fdiv.resid.pred), aes(x = dist, y = gamma)) +
-  geom_point() +
-  geom_line() +
-  labs(
-    title = "",
-    x = "",
-    y = ""
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank()   # Remove minor gridlines
-  )
-v_fdiv.resid.pred_plot
-
 
 #make variogram for bombus diversity
 v_brich.resid.pred <- variogram(brich_resid_pred ~ 1, data = fvimp_sub900913, cutoff = 2000, width = 250)
@@ -617,28 +581,33 @@ v_nos.resid.pred_plot = ggplot(as.data.frame(v_nos.resid.pred), aes(x = dist, y 
   )
 v_nos.resid.pred_plot
 
+blank <- grid.rect(gp=gpar(col="white"))
+variogramgrid = grid.arrange(v_brich.resid.nopred_plot, blank, v_brich.resid.pred_plot, 
+                             blank, blank, blank,
+                           v_babun.resid.nopred_plot, blank, v_babun.resid.pred_plot,
+                           blank, blank, blank,
+                           v_iabun.resid.nopred_plot, blank, v_iabun.resid.pred_plot,
+                           blank, blank, blank,
+                           v_crith.resid.nopred_plot, blank, v_crith.resid.pred_plot,
+                           blank, blank, blank,
+                           v_api.resid.nopred_plot, blank, v_api.resid.pred_plot,
+                           blank, blank, blank,
+                           v_nos.resid.nopred_plot, blank, v_nos.resid.pred_plot,
+                           blank, blank, blank,
+                           ncol = 3, widths = c(4.5,0.5,4.5), heights = c(3,.3, 3, .3, 3, .3, 3, .3, 3, .3, 3, .3))
 
-
-
-variogramgrid = wrap_plots(v_fdiv.resid.nopred_plot, v_fdiv.resid.pred_plot, 
-                           v_fabun.resid.nopred_plot, v_fabun.resid.pred_plot,
-                           v_brich.resid.nopred_plot, v_brich.resid.pred_plot, 
-                           v_babun.resid.nopred_plot, v_babun.resid.pred_plot,
-                           v_iabun.resid.nopred_plot, v_iabun.resid.pred_plot,
-                           v_crith.resid.nopred_plot, v_crith.resid.pred_plot,
-                           v_api.resid.nopred_plot, v_api.resid.pred_plot,
-                           v_nos.resid.nopred_plot, v_nos.resid.pred_plot,
-                           ncol = 2)
-
-variogramgrid
-
-#add subplot labels
-final_plot <- ggdraw() +
+#add labels
+variogramgrid <- ggdraw() +
   draw_plot(variogramgrid, 0.02, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"),
-                  x = c(0, 0.52, 0, 0.52, 0, 0.52, 0, 0.52, 0, 0.52, 0, 0.52, 0, 0.52, 0, 0.52), 
-                  y = c(0.99, 0.99, 0.86, 0.86, 0.72, 0.72, 0.6, 0.6, 0.48, 0.48, 0.37, 0.37, 0.25, 0.25, 0.14, 0.14))
-print(final_plot)
+  draw_plot_label(c("a", "b", "c", "d", "e ", "f", "g", "h", "i", "j", "k", "l"),
+                  x = c(0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51), 
+                  y = c(1, 1, 0.83, 0.83, 0.66, 0.66, 0.5, 0.5, 0.33, 0.33, 0.16, 0.16))
+#export and save
+ggsave(filename = "figures/manuscript_figures/variograms.jpg", 
+       plot = variogramgrid, 
+       width = 2000, 
+       height = 2500, 
+       units = "px")
 
 
 
