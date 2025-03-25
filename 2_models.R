@@ -165,9 +165,9 @@ bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
 
 # rerun depending on whether using interactions or not
-bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
-bf.allnos <- bf(formula.allnos.base, family="bernoulli")
-bf.api <- bf(formula.apicystis.base, family="bernoulli")
+bf.allcrith <- bf(formula.allcrith.inter, family="bernoulli")
+bf.allnos <- bf(formula.allnos.inter, family="bernoulli")
+bf.api <- bf(formula.apicystis.inter, family="bernoulli")
 
 
 bform.par <- bf.allcrith + bf.allnos + bf.api +
@@ -195,7 +195,7 @@ prior <- c(set_prior("normal(0, 1)", class = "b",
 #properly recompiled when you switch over...otherwise it will still
 #be slow. this makes me think it's a difference in how the model
 #gets specified in stan...?)
-fit.bombus.crith <- brm(bf.allcrith, fvimp_brmsdf,
+fit.iabund <- brm(bf.iabund, fvimp_brmsdf,
                               cores=4,
                               iter = (10^4),
                               chains = 4,
@@ -270,26 +270,6 @@ plot(pp_check(fit.bombus.inter, resp = "hasnosema"))
 plot(pp_check(fit.bombus.inter, resp = "apicystis"))
 
 
-
-## **********************************************************
-## Fit Nosema models on just native bees
-## **********************************************************
-native_fv = fvimp_brmsdf %>% filter(subsetPar == TRUE, final_id != "Bombus_impatiens")
-
-fit.native.nosema <- brm(bf.allnos, native_fv,
-                        cores=4,
-                        iter = (10^4),
-                        chains = 4,
-                        thin=1,
-                        init=0,
-                        control = list(adapt_delta = 0.999,
-                                       stepsize = 0.001,
-                                       max_treedepth = 20),
-                        data2 = list(studycov = studycov)
-)
-summary(fit.native.nosema)
-write.ms.table(fit.native.nosema, "Nosema_nativebombus")
-
 ## **********************************************************
 ## Model Checks with DHARMa
 ## **********************************************************
@@ -315,80 +295,52 @@ check_brms <- function(model,             # brms model
   invisible(dharma.obj)
 }
 
-
-
-
-
-
-
 checked.crith.base <- check_brms(fit.bombus.crith)
 checked.nos.base <- check_brms(fit.bombus.nos)
 checked.api.base <- check_brms(fit.bombus.api.inter)
+checked.brich <- check_brms(fit.brich)
+checked.babund <- check_brms(fit.babund)
+checked.iabund <- check_brms(fit.iabund)
 
-testZeroInflation(checked.crith.base)
-testQuantiles(checked.nos.base)
+testZeroInflation(checked.babund)
+testQuantiles(checked.babund)
 
 
 
 ## **********************************************************
 ## Model Comparisons
 ## **********************************************************
-#comparison of two best models
-waic(
-  fit.bombus.all.prior.natinteraction,
-  fit.bombus.all.prior.impinteraction,
-  fit.bombus.all.prior.nointeraction,
+#comparison of simple vs two-way interaction models
+loo_crith = loo::loo(
+  fit.bombus.par,
+  fit.bombus.par.inter,
   compare = TRUE,
-  resp = "hasnosema",
-  pointwise = FALSE,
-  model_names = NULL
-)
-
-
-loofit = loo::loo(
-  fit.bombus.all.inter,
-  compare = TRUE,
-  resp = "hasnosema",
+  resp = "hascrithidia",
   pointwise = FALSE,
   k_threshold = 0.7,
   model_names = NULL
 )
 
-loofit = loo::loo(
-  fit.nosema.nointeractions.momentmatching,
-  fit.nosema.natinteraction.momentmatching,
-  fit.nosema.impinteraction.momentmatching,
-  fit.nosema.bothinteractions.momentmatching,
+loo_apicystis = loo::loo(
+  fit.bombus.par,
+  fit.bombus.par.inter,
   compare = TRUE,
-  resp = "hasnosema",
+  resp = "apicystis",
   pointwise = FALSE,
   k_threshold = 0.7,
-  moment_match = TRUE,
   model_names = NULL
 )
 
-loo_moment_match(
-  fit.nosema.nointeractions.momentmatching,
-  fit.nosema.natinteraction.momentmatching,
-  fit.nosema.impinteraction.momentmatching,
-  fit.nosema.bothinteractions.momentmatching,
-  loofit,
-  k_threshold = 0.7,
-  check = FALSE
-)
+crith_diff = as.data.frame(loo_crith$diffs)
+crith_diff$parasite = "crithidia"
+api_diff = as.data.frame(loo_apicystis$diffs)
+api_diff$parasite = "apicystis"
+loo_df = rbind(crith_diff, api_diff)
 
-
-par = fvimp_brmsdf[fvimp_brmsdf$subsetPar == TRUE,]
-pareto_k <- loofit$diagnostics$pareto_k
-high_pareto_k_indices <- which(pareto_k > 0.7)
-high_pareto_k_data_new <- par[high_pareto_k_indices, ]
-
-# View or save the high k data points
-print(high_pareto_k_data)
-
+write.csv(loo_df, "saved/tables/two_way_loo.csv")
 
 ## **********************************************************
-## Models for parasitism between species
+## Models for pairwise comparison of parasitism between species
 ## **********************************************************
 bf.cbombi <- bf(formula(cbombii ~ final_id), family="bernoulli")
 bf.cexpoeki <- bf(formula(cexpoeki ~ final_id), family="bernoulli")
