@@ -838,6 +838,7 @@ casteplot = ggplot(allpar, aes(x = parname, y = estimate__, color = caste)) +
                      c("apicystis" = expression(italic("Apicystis spp.")), 
                        "crithidia" = expression(italic("Crithidia spp.")), 
                        "nosema" = expression(italic("Vairimorpha spp.")))) +
+  scale_y_continuous(limits = c(0,1)) +
   theme_ms() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
@@ -845,11 +846,11 @@ casteplot = ggplot(allpar, aes(x = parname, y = estimate__, color = caste)) +
   theme(legend.position = "bottom") +
   geom_text(data = data.frame(
     x = c(2),
-    y = c(1),
+    y = c(0.75),
     label = c("**")
   ), aes(x=x, y=y, label=label),
   color = "black",
-  size=12)
+  size=10)
 
 casteplot
 
@@ -964,4 +965,17 @@ ggsave(filename = "figures/manuscript_figures/crithinteraction.jpg",
        height = 3000, 
        units = "px")
 
+#FIGURE S5: apicystis ~ floral diversity
+ggsave(filename = "figures/manuscript_figures/apicystis_fdiv.jpg", 
+       plot = apicystis.fdiv, 
+       width = 1500, 
+       height = 1200, 
+       units = "px")
+
+#Figure S7: parasitism ~ caste
+ggsave(filename = "figures/manuscript_figures/casteplot.jpg", 
+       plot = casteplot, 
+       width = 1600, 
+       height = 1200, 
+       units = "px")
 
