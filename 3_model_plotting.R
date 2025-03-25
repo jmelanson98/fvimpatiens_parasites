@@ -878,6 +878,19 @@ ggsave(filename = "figures/manuscript_figures/bombusgrid.jpg",
        height = 3500, 
        units = "px")
 
+#FIGURE FOR BLUEBERRY RESEARCH DAY
+partialbombusgrid = grid.arrange(babun.fabun, babun.bberry, babun.edge,
+                          brich.fabund, brich.bberry, brich.edge,
+                          ncol = 3)
+
+#export and save
+ggsave(filename = "figures/bcberry.jpg", 
+       plot = partialbombusgrid, 
+       width = 3000, 
+       height = 3000, 
+       units = "px")
+
+
 #FIGURE S3: bee community phenology
 bombusdoy = grid.arrange(babun.doy, iabund.doy, brich.doy, ncol = 3)
 
