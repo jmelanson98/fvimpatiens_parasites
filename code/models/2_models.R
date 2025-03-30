@@ -1,4 +1,4 @@
-setwd("~/Documents/UBC/Bombus Project/fvimpatiens_parasites")
+setwd("~/Documents/UBC/bombus_project/fvimpatiens_parasites")
 
 ## Prepares the data for model fitting (standardizes continuous
 ## variables, creates dummy variables to be used as weights to all
@@ -12,13 +12,13 @@ rm(list=ls())
 ncores <- 4
 
 fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
-source("src/init.R")
-source("src/misc.R")
-source("src/writeResultsTable.R")
-source("src/runParasiteModels.R")
-source("src/standardize_weights.R")
-source("src/getPhyloMatrix.R")
-source("src/runPlotFreqModelDiagnostics.R")
+source("code/src/init.R")
+source("code/src/misc.R")
+source("code/src/writeResultsTable.R")
+source("code/src/runParasiteModels.R")
+source("code/src/standardize_weights.R")
+source("code/src/getPhyloMatrix.R")
+source("code/src/runPlotFreqModelDiagnostics.R")
 
 ## **********************************************************
 ## formula for site effects on the bee community
@@ -212,9 +212,9 @@ fit.iabund <- brm(bf.iabund, fvimp_brmsdf,
 
 write.ms.table(fit.bombus.all, "AllModels_fv")
 save(fit.bombus.all, fvimp_brmsdf, orig.spec,
-     file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv.Rdata")
+     file="saved/AllModels_fv.Rdata")
 
-load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_beerichbeta.Rdata")
+load(file="saved/AllModels_fv_beerichbeta.Rdata")
 plot.res(fit.bombus.nos.inter, "Nosema_interaction_manualprior")
 
 summary(fit.bombus.all)
@@ -254,9 +254,9 @@ fit.bombus.inter <- brm(bform.all, fvimp_brmsdf,
 
 write.ms.table(fit.bombus.inter, "AllModels_fv_inter")
 save(fit.bombus.inter, fvimp_brmsdf, orig.spec,
-     file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_inter.Rdata")
+     file="saved/AllModels_fv_inter.Rdata")
 
-load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_inter.Rdata")
+load(file="saved/AllModels_fv_inter.Rdata")
 plot.res(fit.bombus.inter, "AllModels_fv_inter")
 
 summary(fit.bombus.inter)

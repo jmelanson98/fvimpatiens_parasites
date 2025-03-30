@@ -1,20 +1,20 @@
 ## plotting based on tutorial:
 ## https://www.andrewheiss.com/blog/2021/11/10/ame-bayes-re-guide/#different-kinds-of-averCanopyBin-predictions-with-multilevel-models
 
-setwd('/Users/jenna1/Documents/UBC/Bombus Project/fvimpatiens_parasites')
+setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
 rm(list=ls())
 source("src/ggplotThemes.R")
 source("src/init.R")
 source("src/misc.R")
 
 ## load model results and data
-load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv.Rdata")
-load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/AllModels_fv_inter.Rdata")
+load(file="saved/AllModels_fv.Rdata")
+load(file="saved/AllModels_fv_inter.Rdata")
 
 # save and/or load conditional effects
 save(all.cond.effects, all.cond.effects.interaction,
-file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/conditional_effects.Rdata")
-load(file="/Users/jenna1/Documents/UBC/Bombus Project/Rdata_files/fvimpatiens_parasites/conditional_effects.Rdata")
+file="saved/conditional_effects.Rdata")
+load(file="saved/conditional_effects.Rdata")
 
 ## *********************************************************************************
 ## Prepping conditional effects and axis labels -- veg & native bee abundance models
