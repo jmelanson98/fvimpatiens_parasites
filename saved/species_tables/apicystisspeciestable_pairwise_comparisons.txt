@@ -1,0 +1,16 @@
+"Comparison"&"Estimate"&"EstError"&"Pgt0"&"Plt0"&"BayesP"&"Pgt0Stars"&"Plt0Stars"&"adjusted_p"
+"1"&"Intercept - final_idBombus_flavifrons"&-1.46535613534838&1.13083698411389&0.0923&0.9077&0.0922666666666667&"ns"&"ns"&1
+"2"&"Intercept - final_idBombus_impatiens"&-1.93440871374194&1.11193360703952&0.0303&0.9697&0.0303333333333333&"*"&"ns"&0.455
+"3"&"Intercept - final_idBombus_mixtus"&-1.73482424780373&1.11538863533377&0.0499&0.9501&0.0498666666666666&"*"&"ns"&0.747999999999999
+"4"&"Intercept - final_idBombus_rufocinctus"&-0.738739848752513&1.23006845067147&0.2783&0.7217&0.278266666666667&"ns"&"ns"&1
+"5"&"Intercept - final_idBombus_vosnesenskii"&-2.2261732019851&1.14722243409946&0.018&0.982&0.018&"*"&"ns"&0.27
+"6"&"final_idBombus_flavifrons - final_idBombus_impatiens"&-0.469052578393559&0.304990306468072&0.0576&0.9424&0.0576&"ns"&"ns"&0.864
+"7"&"final_idBombus_flavifrons - final_idBombus_mixtus"&-0.269468112455353&0.312851194441919&0.1919&0.8081&0.191933333333333&"ns"&"ns"&1
+"8"&"final_idBombus_flavifrons - final_idBombus_rufocinctus"&0.726616286595866&0.613295308666973&0.8903&0.1097&0.109733333333333&"ns"&"ns"&1
+"9"&"final_idBombus_flavifrons - final_idBombus_vosnesenskii"&-0.76081706663672&0.411274706769038&0.0316&0.9684&0.0316&"*"&"ns"&0.473999999999999
+"10"&"final_idBombus_impatiens - final_idBombus_mixtus"&0.199584465938206&0.221716595437908&0.813&0.187&0.187&"ns"&"ns"&1
+"11"&"final_idBombus_impatiens - final_idBombus_rufocinctus"&1.19566886498942&0.569239781933639&0.992&0.008&0.00800000000000001&"ns"&"**"&0.12
+"12"&"final_idBombus_impatiens - final_idBombus_vosnesenskii"&-0.291764488243161&0.350914944973937&0.2029&0.7971&0.202866666666667&"ns"&"ns"&1
+"13"&"final_idBombus_mixtus - final_idBombus_rufocinctus"&0.996084399051219&0.574116993948754&0.973&0.027&0.027&"ns"&"*"&0.405
+"14"&"final_idBombus_mixtus - final_idBombus_vosnesenskii"&-0.491348954181367&0.356548329932446&0.0853&0.9147&0.0852666666666667&"ns"&"ns"&1
+"15"&"final_idBombus_rufocinctus - final_idBombus_vosnesenskii"&-1.48743335323259&0.634970246831205&0.0059&0.9941&0.00593333333333335&"**"&"ns"&0.0890000000000002
