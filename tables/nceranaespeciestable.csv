@@ -1,7 +1,0 @@
-"","Estimate","Est.Error","l-95% CI","u-95% CI","Rhat","Bulk_ESS","Tail_ESS","Pgt0","Plt0","Pgt0Stars","Plt0Stars"
-"Intercept",-5.46,1.64,-9.12,-2.7,1,1971.24,3015.49,0,1,"***","ns"
-"final_idBombus_flavifrons",1.19,1.78,-2.03,4.95,1,2319.05,3225.65,0.74,0.26,"ns","ns"
-"final_idBombus_impatiens",0.32,1.77,-2.86,4.1,1,2408.15,3329.05,0.55,0.45,"ns","ns"
-"final_idBombus_mixtus",0.92,1.73,-2.12,4.67,1,2285.88,3291.43,0.68,0.32,"ns","ns"
-"final_idBombus_rufocinctus",2.96,1.71,-0.01,6.66,1,2162.02,3370.54,0.97,0.03,"ns","*"
-"final_idBombus_vosnesenskii",1.01,1.95,-2.72,4.98,1,2831.9,3942.24,0.7,0.3,"ns","ns"
