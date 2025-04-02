@@ -3,9 +3,9 @@
 
 setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
 rm(list=ls())
-source("src/ggplotThemes.R")
-source("src/init.R")
-source("src/misc.R")
+source("code/src/ggplotThemes.R")
+source("code/src/init.R")
+source("code/src/misc.R")
 
 ## load model results and data
 load(file="saved/AllModels_fv.Rdata")
@@ -114,7 +114,7 @@ babun.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = native_bee_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x="", y="") +
+  labs(x="Proportion blueberry", y="Native *Bombus* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -129,13 +129,6 @@ babun.bberry <-
   geom_ribbon(data = babun, aes(ymin = lower__, ymax = upper__,
                   alpha=0.5), fill = "red")
 
-  geom_text(data = data.frame(
-    x = c(2.5),
-    y = c(40),
-    label = c("***p < 0 = 0.98")
-  ), aes(x=x, y=y, label=label),
-  color = "black",
-  size=5)
 babun.bberry
 
 ## ***********************************************************************
@@ -150,7 +143,7 @@ babun.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = native_bee_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "", y = "") +
+  labs(x = "Edge density", y = "Native *Bombus* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -297,7 +290,7 @@ brich.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Proportion blueberry", y = "") +
+  labs(x = "Proportion blueberry", y = "*Bombus* species richness") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -327,7 +320,7 @@ brich.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Edge density", y = "") +
+  labs(x = "Edge density", y = "*Bombus* species richness") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -442,7 +435,7 @@ iabund.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "", y = "") +
+  labs(x = "Proportion blueberry", y = "*B. impatiens* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -451,14 +444,7 @@ iabund.bberry <-
   scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
   theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16)) #+
-  geom_text(data = data.frame(
-    x = c(2.5),
-    y = c(40),
-    label = c("n.s.")
-  ), aes(x=x, y=y, label=label),
-  color = "black",
-  size=5)
+        text = element_text(size=16))
 
 iabund.bberry
 
@@ -474,7 +460,7 @@ iabund.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "", y = "") +
+  labs(x = "Edge density", y = "*B. impatiens* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -483,14 +469,7 @@ iabund.edge <-
   scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
   theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
-        text = element_text(size=16)) #+
-geom_text(data = data.frame(
-  x = c(2.5),
-  y = c(40),
-  label = c("n.s.")
-), aes(x=x, y=y, label=label),
-color = "black",
-size=5)
+        text = element_text(size=16)) 
 
 iabund.edge
 
@@ -889,6 +868,20 @@ ggsave(filename = "figures/bcberry.jpg",
        width = 3000, 
        height = 3000, 
        units = "px")
+
+
+#FIGURE FOR PBESA SLIDES
+partialbombusgrid2 = grid.arrange(babun.bberry, brich.bberry, iabund.bberry,
+                                  babun.edge, brich.edge, iabund.edge,
+                                  ncol = 3)
+
+#export and save
+ggsave(filename = "figures/pbesa.jpg", 
+       plot = partialbombusgrid2, 
+       width = 3000, 
+       height = 2000, 
+       units = "px")
+
 
 
 #FIGURE S3: bee community phenology
