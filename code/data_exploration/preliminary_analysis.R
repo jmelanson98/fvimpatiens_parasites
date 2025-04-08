@@ -272,7 +272,7 @@ parasite_sums = as.matrix(parasite_sums)
 heatmap(parasite_sums)
 
 ##make boxplots like Lauren's--average prevalence of each parasite at each subsite x period combo
-fvimp_brmsdf <- read.csv("/Users/jenna1/Documents/UBC/Bombus Project/fvimpatiens_parasites/data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
+fvimp_brmsdf <- read.csv("/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites/data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 fvimp_brmsdf %>% mutate(period = case_when(round < 3 ~ "1",
                                            round > 2 & round < 5 ~ "2",
                                            round > 4 & round < 7 ~ "3",
@@ -315,12 +315,19 @@ library(broom)
 library(betareg)
 
 # Calculate sample size for each species
-data_long <- data_long %>%
+sample_sizes = fvimp_brmsdf %>%
+  filter(apidae == 1) %>%
+  filter(caste == "worker") %>%
   group_by(final_id) %>%
-  mutate(species_with_n = paste0(final_id, "\n(n=", n(), ")"))
+  summarize(n = n())
+data_long_with_n = left_join(data_long, sample_sizes, by = "final_id")
+
+data_long_with_n <- data_long_with_n %>%
+  group_by(final_id) %>%
+  mutate(species_with_n = paste0(final_id, "\n(n=", n, ")"))
 
 # Plot with updated y-axis labels
-p <- ggplot(data_long, aes(x = Proportion, y = species_with_n, fill = final_id)) +
+p <- ggplot(data_long_with_n, aes(x = Proportion, y = species_with_n, fill = final_id)) +
   geom_boxplot() +
   facet_grid(.~ Variable, scales = "free_y") +
   labs(x = "Rate", y = "Bumble bee species") +
@@ -332,7 +339,7 @@ p <- ggplot(data_long, aes(x = Proportion, y = species_with_n, fill = final_id))
         axis.text.y = element_text(size = 20)) # Adjust text size for y-axis labels if needed
 
 
-ggsave("boxplot_parasiteprev.png", plot = p, width = 40, height = 8, dpi = 500)
+ggsave("figures/manuscript_figures/boxplot_parasiteprev.png", plot = p, width = 40, height = 8, dpi = 500)
 
 
 
