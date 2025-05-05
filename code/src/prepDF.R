@@ -90,6 +90,9 @@ calculateLandscapeMetrics <- function(landcover.raster, site.shapefile, landcove
     landscape.dat = left_join(landscape.dat, res1_edge_summary, by = "sample_pt")
     landscape.dat = left_join(landscape.dat, res1_shdi, by = "sample_pt")
     
+    #update
+    print(paste("Buffer size", buffer, "done.", sep = " "))
+    
   }
   
   return(landscape.dat)
