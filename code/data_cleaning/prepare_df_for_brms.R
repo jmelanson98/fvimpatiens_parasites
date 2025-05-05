@@ -4,10 +4,15 @@
 #but specimens not found
 
 rm(list=ls())
+
+#set paths locally
 #setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
+#bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+
 #set paths on server
 setwd("/home/melanson/projects/def-ckremen/melanson/fvimpatiens_parasites")
 bombus_path = "/home/melanson/projects/def-ckremen/melanson/"
+
 #load packages
 source('code/src/init.R')
 source('code/src/prepDF.R')
@@ -58,7 +63,7 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 #### - calculate landscape shdi in 500m buffer around each sample_pt
 #### - return a dataframe containing prop_blueberry, prop_edge, and shdi for each sample_pt
 
-landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000, 1250, 1500))
+landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000))
 write.csv(landscapeMetrics, "data/landscapemetrics.csv")
 
 #OR
