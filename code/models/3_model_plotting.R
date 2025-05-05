@@ -16,6 +16,9 @@ save(all.cond.effects, all.cond.effects.interaction,
 file="saved/conditional_effects.Rdata")
 load(file="saved/conditional_effects.Rdata")
 
+# load landscape metrics
+landscapemetrics = read.csv("data/landscapemetrics.csv")
+
 ## *********************************************************************************
 ## Prepping conditional effects and axis labels -- veg & native bee abundance models
 ## *********************************************************************************
@@ -985,3 +988,48 @@ ggsave(filename = "figures/manuscript_figures/casteplot.jpg",
        height = 1200, 
        units = "px")
 
+
+
+## ***********************************************************************
+## Make some visualizations of landcover data
+## ***********************************************************************
+
+landscapemetrics[is.na(landscapemetrics)] = 0
+lmet = pivot_longer(landscapemetrics, 
+                    cols = -c("X", "sample_pt"),
+                    names_to = "metric",
+                    values_to = "value")
+shdi = filter(lmet, str_detect(metric, "shdi"))
+shdi_order = c("landscape_shdi_250", "landscape_shdi_500", "landscape_shdi_750", "landscape_shdi_1000")
+edge = filter(lmet, str_detect(metric, "edge"))
+edge_order = c("prop_edge_250", "prop_edge_500", "prop_edge_750", "prop_edge_1000")
+blueberry = filter(lmet, str_detect(metric, "blueberry"))
+blueberry_order = c("prop_blueberry_250", "prop_blueberry_500", "prop_blueberry_750", "prop_blueberry_1000")
+
+plot_labels = c("250m", "500m", "750m", "1000m")
+
+panel1 = ggplot(shdi, aes(y = value, x = factor(metric, level = shdi_order))) +
+  geom_violin() +
+  theme_minimal() +
+  labs(y = "Shannon Diversity", x = "", ) +
+  scale_x_discrete(labels = plot_labels)
+
+panel2 = ggplot(edge, aes(y = value, x = factor(metric, level = edge_order))) +
+  geom_violin() +
+  theme_minimal() +
+  labs(y = "Edge density", x = "", ) +
+  scale_x_discrete(labels = plot_labels)
+
+panel3 = ggplot(blueberry, aes(y = value, x = factor(metric, level = blueberry_order))) +
+  geom_violin() +
+  theme_minimal() +
+  labs(y = "Proportion blueberry", x = "Buffer size", ) +
+  scale_x_discrete(labels = plot_labels)
+
+landscapeplots <- grid.arrange(
+  arrangeGrob(panel1, panel2, panel3,
+              ncol = 1))
+ggsave("figures/manuscript_figures/landscapemetrics.jpg", 
+       landscapeplots,
+       height = 3000, width = 1500,
+       units = "px")

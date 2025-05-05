@@ -63,7 +63,7 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 #### - calculate landscape shdi in 500m buffer around each sample_pt
 #### - return a dataframe containing prop_blueberry, prop_edge, and shdi for each sample_pt
 
-landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000))
+landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000, 1250, 1500))
 write.csv(landscapeMetrics, "data/landscapemetrics.csv")
 
 #OR
