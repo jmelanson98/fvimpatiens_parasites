@@ -29,6 +29,7 @@ library(gstat)
 library(sp)
 library(glme)
 library(patchwork)
+library(landscapemetrics)
 
 ## trees
 library(phytools)
