@@ -4,10 +4,15 @@
 #but specimens not found
 
 rm(list=ls())
+
+#set paths locally
 #setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
+#bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+
 #set paths on server
 setwd("/home/melanson/projects/def-ckremen/melanson/fvimpatiens_parasites")
 bombus_path = "/home/melanson/projects/def-ckremen/melanson/"
+
 #load packages
 source('code/src/init.R')
 source('code/src/prepDF.R')

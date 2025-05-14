@@ -18,7 +18,6 @@ library(cowplot)
 library(modelr)
 library(grid)
 
-
 ## variograms + other spatial stuff
 library(raster)
 library(ggspatial)
