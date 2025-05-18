@@ -849,9 +849,9 @@ bombusgrid = grid.arrange(babun.fabun, babun.fdiv, babun.bberry, babun.edge,
 #add labels
 bombusgrid <- ggdraw() +
   draw_plot(bombusgrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"), 
-                  x = c(0.01, 0.26, 0.51, 0.76, 0.01, 0.26, 0.51, 0.76, 0.01, 0.26, 0.51, 0.76), 
-                  y = c(0.97, 0.97, 0.97, 0.97, 0.64, 0.64, 0.64, 0.64, 0.3, 0.3, 0.3, 0.3))
+  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)"), 
+                  x = c(0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75), 
+                  y = c(1, 1, 1, 1, 0.66, 0.66, 0.66, 0.66, 0.33, 0.33, 0.33, 0.33))
 
 #export and save
 ggsave(filename = "figures/manuscript_figures/bombusgrid.jpg", 
@@ -892,10 +892,10 @@ bombusdoy = grid.arrange(babun.doy, iabund.doy, brich.doy, ncol = 3)
 
 #add labels
 bombusdoy <- ggdraw() +
-  draw_plot(doybeegrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c"), 
-                  x = c(0.02, 0.35, 0.68), 
-                  y = c(0.97, 0.97, 0.97))
+  draw_plot(bombusdoy, 0.015, 0, 1, 1) +
+  draw_plot_label(c("(A)", "(B)", "(C)"), 
+                  x = c(0, 0.33, 0.66), 
+                  y = c(1, 1, 1))
 #save and export
 ggsave(filename = "figures/manuscript_figures/bombusdoy.jpg", 
        plot = bombusdoy, 
@@ -910,9 +910,9 @@ impatiensgrid = grid.arrange(hascrith.imp, hasnosema.imp, apicystis.imp,
 #add labels
 impatiensgrid <- ggdraw() +
   draw_plot(impatiensgrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c"), 
-                  x = c(0.02, 0.35, 0.68), 
-                  y = c(0.97, 0.97, 0.97))
+  draw_plot_label(c("(A)", "(B)", "(C)"), 
+                  x = c(0, 0.33, 0.66), 
+                  y = c(1, 1, 1))
 #save and export
 ggsave(filename = "figures/manuscript_figures/impatiensgrid.jpg", 
        plot = impatiensgrid, 
@@ -940,9 +940,9 @@ parasitedoy = grid.arrange(hascrith.doy, hasnosema.doy, apicystis.doy, ncol = 3)
 #add labels
 parasitedoy <- ggdraw() +
   draw_plot(parasitedoy, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c"), 
-                  x = c(0, 0.34, 0.68), 
-                  y = c(0.97, 0.97, 0.97))
+  draw_plot_label(c("(A)", "(B)", "(C)"), 
+                  x = c(0, 0.33, 0.66), 
+                  y = c(1, 1, 1))
                   #y = c(0.97, 0.73, 0.48)) #if there's a legend
 #save and export
 ggsave(filename = "figures/manuscript_figures/parasitedoy.jpg", 
@@ -964,9 +964,9 @@ crithinteraction <- grid.arrange(
 #add labels
 crithinteraction <- ggdraw() +
   draw_plot(crithinteraction, 0.015, 0, 1, 1) +
-  draw_plot_label(c("a", "b"), 
-                  x = c(0.01, 0.01), 
-                  y = c(0.97, 0.5))
+  draw_plot_label(c("(A)", "(B)"), 
+                  x = c(0, 0), 
+                  y = c(1, 0.55))
 #add labels
 ggsave(filename = "figures/manuscript_figures/crithinteraction.jpg", 
        plot = crithinteraction, 
