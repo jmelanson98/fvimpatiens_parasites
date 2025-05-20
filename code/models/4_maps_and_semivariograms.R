@@ -334,12 +334,12 @@ load(file="saved/data_with_residuals.Rdata")
 #############################################
 
 # Convert the data frames into sf objects
-fvimp_sub_withresid <- st_as_sf(fvimp_sub_withresid, coords = c("long", "lat"), crs = 4326)
-fvimp_subpar_withresid <- st_as_sf(fvimp_subpar_withresid, coords = c("long", "lat"), crs = 4326)
+fvimp_sub = st_as_sf(fvimp_sub, coords = c("long", "lat"), crs = 4326)
+fvimp_subpar = st_as_sf(fvimp_subpar, coords = c("long", "lat"), crs = 4326)
 
 # Transform the coordinate reference system to EPSG:900913
-fvimp_sub900913 <- st_transform(fvimp_sub_withresid, crs = 3857)
-fvimp_subpar900913 <- st_transform(fvimp_subpar_withresid, crs = 3857)
+fvimp_sub900913 <- st_transform(fvimp_sub, crs = 3857)
+fvimp_subpar900913 <- st_transform(fvimp_subpar, crs = 3857)
 
 
 ############################################
@@ -353,7 +353,7 @@ v_brich.resid.nopred_plot = ggplot(as.data.frame(v_brich.resid.nopred), aes(x = 
   geom_point() +
   geom_line() +
   labs(
-    title = expression("*Bombus* Species Richness"),
+    title = expression(""),
     x = "",
     y = "Semivariance"
   ) +
@@ -373,7 +373,7 @@ v_babun.resid.nopred_plot = ggplot(as.data.frame(v_babun.resid.nopred), aes(x = 
   geom_point() +
   geom_line() +
   labs(
-    title = expression("Native *Bombus* Abundance"),
+    title = expression(""),
     x = "",
     y = "Semivariance"
   ) +
@@ -392,7 +392,7 @@ v_iabun.resid.nopred_plot = ggplot(as.data.frame(v_iabun.resid.nopred), aes(x = 
   geom_point() +
   geom_line() +
   labs(
-    title = expression("*B*. *impatiens* Abundance"),
+    title = expression(""),
     x = "",
     y = "Semivariance"
   ) +
@@ -411,7 +411,7 @@ v_crith.resid.nopred_plot = ggplot(as.data.frame(v_crith.resid.nopred), aes(x = 
   geom_point() +
   geom_line() +
   labs(
-    title = expression("*Crithidia spp* Prevalence"),
+    title = expression(""),
     x = "",
     y = "Semivariance"
   ) +
@@ -430,7 +430,7 @@ v_api.resid.nopred_plot = ggplot(as.data.frame(v_api.resid.nopred), aes(x = dist
   geom_point() +
   geom_line() +
   labs(
-    title = expression("*Apicystis spp* Prevalence"),
+    title = expression(""),
     x = "",
     y = "Semivariance"
   ) +
@@ -449,7 +449,7 @@ v_nos.resid.nopred_plot = ggplot(as.data.frame(v_nos.resid.nopred), aes(x = dist
   geom_point() +
   geom_line() +
   labs(
-    title = expression("*Vairimorpha spp* Prevalence"),
+    title = expression(""),
     x = "Distance (meters)",
     y = "Semivariance"
   ) +
@@ -581,32 +581,96 @@ v_nos.resid.pred_plot = ggplot(as.data.frame(v_nos.resid.pred), aes(x = dist, y 
   )
 v_nos.resid.pred_plot
 
-blank <- grid.rect(gp=gpar(col="white"))
-variogramgrid = grid.arrange(v_brich.resid.nopred_plot, blank, v_brich.resid.pred_plot, 
-                             blank, blank, blank,
-                           v_babun.resid.nopred_plot, blank, v_babun.resid.pred_plot,
-                           blank, blank, blank,
-                           v_iabun.resid.nopred_plot, blank, v_iabun.resid.pred_plot,
-                           blank, blank, blank,
-                           v_crith.resid.nopred_plot, blank, v_crith.resid.pred_plot,
-                           blank, blank, blank,
-                           v_api.resid.nopred_plot, blank, v_api.resid.pred_plot,
-                           blank, blank, blank,
-                           v_nos.resid.nopred_plot, blank, v_nos.resid.pred_plot,
-                           blank, blank, blank,
-                           ncol = 3, widths = c(4.5,0.5,4.5), heights = c(3,.3, 3, .3, 3, .3, 3, .3, 3, .3, 3, .3))
 
+#### make grid plots
+blank <- grid.rect(gp=gpar(col="white"))
+brich = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "<i>Bombus</i> species richness", 
+           fill = NA, label.color = NA,
+           size = 5)
+babun = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "Native <i>Bombus</i> abundance", 
+           fill = NA, label.color = NA,
+           size = 5)
+iabun = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "<i>Bombus impatiens</i> abundance", 
+           fill = NA, label.color = NA,
+           size = 5)
+crith = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "<i>Crithidia spp.</i> prevalence", 
+           fill = NA, label.color = NA,
+           size = 5)
+api = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "<i>Apicystis spp.</i> prevalence", 
+           fill = NA, label.color = NA,
+           size = 5)
+nos = ggplot() +
+  theme_void() +
+  annotate("richtext", x = 0, y = 0, 
+           label = "<i>Vairimorpha spp.</i> prevalence", 
+           fill = NA, label.color = NA,
+           size = 5)
+
+
+
+
+row1 = grid.arrange(
+  v_brich.resid.nopred_plot, blank, v_brich.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+row2 = grid.arrange(
+  v_babun.resid.nopred_plot, blank, v_babun.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+row3 = grid.arrange(
+  v_iabun.resid.nopred_plot, blank, v_iabun.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+row4 = grid.arrange(
+  v_crith.resid.nopred_plot, blank, v_crith.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+row5 = grid.arrange(
+  v_api.resid.nopred_plot, blank, v_api.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+row6 = grid.arrange(
+  v_nos.resid.nopred_plot, blank, v_nos.resid.pred_plot,
+  ncol = 3,
+  widths = c(4.5, 1, 4.5))
+
+variogramgrid = grid.arrange(
+  blank, brich, row1, 
+  blank, babun, row2, 
+  blank, iabun, row3, 
+  blank, crith, row4, 
+  blank, api, row5, 
+  blank, nos, row6,
+  ncol = 1,
+  heights = c(rep(c(0.5, 0.5, 2), 6))
+) 
+  
 #add labels
 variogramgrid <- ggdraw() +
-  draw_plot(variogramgrid, 0.02, 0, 1, 1) +
-  draw_plot_label(c("a", "b", "c", "d", "e ", "f", "g", "h", "i", "j", "k", "l"),
+  draw_plot(variogramgrid, 0.07, 0, 0.93, 1) +
+  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)"),
                   x = c(0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51, 0, 0.51), 
-                  y = c(1, 1, 0.83, 0.83, 0.66, 0.66, 0.5, 0.5, 0.33, 0.33, 0.16, 0.16))
+                  y = c(0.95, 0.95, 0.78, 0.78, 0.61, 0.61, 0.45, 0.45, 0.28, 0.28, 0.11, 0.11))
 #export and save
 ggsave(filename = "figures/manuscript_figures/variograms.jpg", 
        plot = variogramgrid, 
        width = 2000, 
-       height = 2500, 
+       height = 3000, 
        units = "px")
 
 
