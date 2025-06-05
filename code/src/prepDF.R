@@ -235,8 +235,6 @@ prepBRMSdf <- function(sampleEffort, samplePoints, cleanedSpecimens, flowerList,
     }
   }
   
-  #join landscape data to sample effort dataframe
-  sampleEffort = left_join(sampleEffort, landscapeData, by = "sample_pt")
   
   #remove columns that are not used in brms
   colsToKeep = c("site", "round", "sample_pt", "sample_id", "barcode_id", "caste", 
@@ -246,7 +244,12 @@ prepBRMSdf <- function(sampleEffort, samplePoints, cleanedSpecimens, flowerList,
                  "landscape_shdi","final_id", "apidae", "apicystis", "ascosphaera", "cbombii", 
                  "crithidiaspp", "cexpoeki", "hascrithidia","nbombii", "nceranae", "hasnosema", "any_parasite")
   brmsdf_reduced = brmsdf[,colnames(brmsdf) %in% colsToKeep]
-  write.csv(brmsdf_reduced, "fvimp_brmsdf.csv")
+  
+  
+  #join landscape data to sample effort dataframe
+  brmsdf_reduced = left_join(brmsdf_reduced, landscapeData, by = "sample_pt")
+  
+  write.csv(brmsdf_reduced, "data/fvimp_brmsdf.csv")
   return(brmsdf_reduced)
   
 }

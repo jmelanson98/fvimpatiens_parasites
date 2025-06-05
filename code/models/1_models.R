@@ -31,9 +31,9 @@ source("code/src/runPlotFreqModelDiagnostics.R")
 
 ## standardize by transect -- landscape variables which are the same during all rounds, vary only 
 ## by transect location
-vars_transect <- c("prop_blueberry",
-               "prop_edge",
-               "landscape_shdi")
+vars_transect <- c("prop_blueberry_500",
+               "prop_edge_500",
+               "landscape_shdi_500")
 
 ## standardize by transect and sample round -- day of year and vegetation data
 vars_transect_sr<- c("julian_date",
@@ -67,7 +67,7 @@ fvimp_brmsdf <- prepDataSEM_bernoulli(spec.data = fvimp_brmsdf,
 
 formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
                               floral_abundance + floral_diversity +
-                              prop_blueberry + prop_edge + landscape_shdi + 
+                              prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
                               julian_date + I(julian_date^2) +
                               (1|sample_pt)
 )
@@ -75,14 +75,14 @@ formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
 
 formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
                                floral_abundance + floral_diversity +
-                               prop_blueberry + prop_edge + landscape_shdi + 
+                               prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
                                julian_date + I(julian_date^2) +
                                  (1|sample_pt)  
                              )
 
 formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
                                floral_abundance + floral_diversity +
-                               prop_blueberry + prop_edge + landscape_shdi + 
+                               prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
                                julian_date + I(julian_date^2) +
                                (1|sample_pt)  
 )
@@ -96,9 +96,9 @@ xvars.fv.base <- c("floral_abundance",
                     "bombus_richness",
                     "native_bee_abundance",
                     "impatiens_abundance",
-                    "prop_blueberry",
-                    "prop_edge",
-                    "landscape_shdi",
+                    "prop_blueberry_500",
+                    "prop_edge_500",
+                    "landscape_shdi_500",
                     "caste",
                     "julian_date",
                     "I(julian_date^2)",
@@ -112,9 +112,9 @@ xvars.fv.inter <- c("floral_abundance",
                    "bombus_richness",
                    "native_bee_abundance*status",
                    "impatiens_abundance*status",
-                   "prop_blueberry",
-                   "prop_edge",
-                   "landscape_shdi",
+                   "prop_blueberry_500",
+                   "prop_edge_500",
+                   "landscape_shdi_500",
                    "caste",
                    "julian_date",
                    "I(julian_date^2)",
@@ -134,10 +134,9 @@ studycov = getPhyloMatrix(studyspecies)
 
 
 ## **********************************************************
-## Run all models
+## Run main models
 ## **********************************************************
 
-#no interactions
 formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
                                         "hascrithidia", 
                                         xvars.fv.base)
@@ -148,7 +147,69 @@ formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
                                         xvars.fv.base)
 
-#with interactions
+#convert to brms format
+bf.brich <- bf(formula.bee.rich, family="beta_binomial")
+bf.babund <- bf(formula.bee.abund, family = "negbinomial")
+bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
+
+# rerun depending on whether using interactions or not
+bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
+bf.allnos <- bf(formula.allnos.base, family="bernoulli")
+bf.api <- bf(formula.apicystis.base, family="bernoulli")
+
+bform.par <- bf.allcrith + bf.allnos + bf.api +
+  set_rescor(FALSE)
+bform.base <-  bf.brich + bf.babund + bf.iabund +
+  set_rescor(FALSE)
+bform.all <-  bf.brich + bf.babund + bf.iabund + 
+  bf.allcrith + bf.allnos + bf.api +
+  set_rescor(FALSE)
+
+
+#this will likely not run on brms 2.22.0
+#not entirely sure why but gradient evaluation on the beta binomial
+#becomes EXTREMELY slow
+#run on brms version 2.20.4 (and make sure the c++ file is 
+#properly recompiled when you switch over...otherwise it will still
+#be slow. this makes me think it's a difference in how the model
+#gets specified in stan...?)
+fit.bombus.all <- brm(bform.all, fvimp_brmsdf,
+                  cores=4,
+                  iter = (10^4),
+                  chains = 4,
+                  thin=1,
+                  init=0,
+                  control = list(adapt_delta = 0.999,
+                                 stepsize = 0.001,
+                                 max_treedepth = 20),
+                  data2 = list(studycov = studycov)
+)
+
+
+
+write.ms.table(fit.bombus.all, "AllModels_fv")
+save(fit.bombus.all, fvimp_brmsdf, orig.spec,
+     file="saved/AllModels_fv.Rdata")
+
+load(file="saved/AllModels_fv_beerichbeta.Rdata")
+plot.res(fit.bombus.nos.inter, "Nosema_interaction_manualprior")
+
+summary(fit.bombus.all)
+bayes_R2(fit.bombus.all)
+
+plot(pp_check(fit.bombus.all, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.all, resp="bombusrichness"))
+plot(pp_check(fit.bombus.all, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.all, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.all, resp = "hasnosema"))
+plot(pp_check(fit.bombus.all, resp = "apicystis"))
+
+
+
+
+## **********************************************************
+## Run models with interactions
+## **********************************************************
 formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
                                             "hascrithidia", 
                                             xvars.fv.inter)
@@ -175,69 +236,14 @@ bform.par <- bf.allcrith + bf.allnos + bf.api +
 bform.base <-  bf.brich + bf.babund + bf.iabund +
   set_rescor(FALSE)
 bform.all <-  bf.brich + bf.babund + bf.iabund + 
-  bf.allcrith + bf.allnos + bf.api +
+  bf.allcrith + bbf.api +
   set_rescor(FALSE)
 
 
+##set priors for pesky interaction term -- only need this if running interaction model on nosema, but we decided it doesnt have enough data :(
+#prior <- c(set_prior("normal(0, 1)", class = "b", coef = "native_bee_abundance:statusnonnative", resp = "hasnosema"))
 
-##set priors for pesky interaction term
-prior <- c(set_prior("normal(0, 1)", class = "b", 
-                      coef = "native_bee_abundance:statusnonnative", 
-                      resp = "hasnosema"))
-
-
-## run model without interactions
-
-#this will likely not run on brms 2.22.0
-#not entirely sure why but gradient evaluation on the beta binomial
-#becomes EXTREMELY slow
-#run on brms version 2.20.4 (and make sure the c++ file is 
-#properly recompiled when you switch over...otherwise it will still
-#be slow. this makes me think it's a difference in how the model
-#gets specified in stan...?)
-fit.iabund <- brm(bf.iabund, fvimp_brmsdf,
-                              cores=4,
-                              iter = (10^4),
-                              chains = 4,
-                              thin=1,
-                              #prior = prior("normal(0,1)", coef = "native_bee_abundance:statusnonnative"),
-                              init=0,
-                              control = list(adapt_delta = 0.999,
-                                             stepsize = 0.001,
-                                             max_treedepth = 20),
-                              data2 = list(studycov = studycov)
-)
-
-
-
-write.ms.table(fit.bombus.all, "AllModels_fv")
-save(fit.bombus.all, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv.Rdata")
-
-load(file="saved/AllModels_fv_beerichbeta.Rdata")
-plot.res(fit.bombus.nos.inter, "Nosema_interaction_manualprior")
-
-summary(fit.bombus.all)
-bayes_R2(fit.bombus.all)
-
-plot(pp_check(fit.bombus.all, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.all, resp="bombusrichness"))
-plot(pp_check(fit.bombus.all, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.all, resp = "hascrithidia"))
-plot(pp_check(fit.bombus.all, resp = "hasnosema"))
-plot(pp_check(fit.bombus.all, resp = "apicystis"))
-
-
-#run models with interactions
-## run model without interactions
-
-#this will likely not run on brms 2.22.0
-#not entirely sure why but gradient evaluation on the beta binomial
-#becomes EXTREMELY slow
-#run on brms version 2.20.4 (and make sure the c++ file is 
-#properly recompiled when you switch over...otherwise it will still
-#be slow. this makes me think it's a difference in how the model
-#gets specified in stan...?)
+#run model with interaction
 fit.bombus.inter <- brm(bform.all, fvimp_brmsdf,
                       cores=4,
                       iter = (10^4),
