@@ -191,8 +191,7 @@ write.ms.table(fit.bombus.all, "AllModels_fv")
 save(fit.bombus.all, fvimp_brmsdf, orig.spec,
      file="saved/AllModels_fv.Rdata")
 
-load(file="saved/AllModels_fv_beerichbeta.Rdata")
-plot.res(fit.bombus.nos.inter, "Nosema_interaction_manualprior")
+load(file="saved/AllModels_fv.Rdata")
 
 summary(fit.bombus.all)
 bayes_R2(fit.bombus.all)

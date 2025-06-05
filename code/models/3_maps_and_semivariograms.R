@@ -681,29 +681,58 @@ ggsave(filename = "figures/manuscript_figures/variograms.jpg",
 library(sf)
 library(spdep)
 
-# Set a distance threshold (e.g., within 1000 meters)
-coords <- st_coordinates(fvimp_sub900913)  # Extract coordinates
-nb <- dnearneigh(coords, d1 = 0, d2 = 1000)  # Neighbors within 1000 units
+# extract coordinates and get neighbors within 1000 units
+coords <- st_coordinates(fvimp_sub900913) 
+nb <- dnearneigh(coords, d1 = 0, d2 = 1000)
 
+coords_par <- st_coordinates(fvimp_subpar900913) 
+nb_par <- dnearneigh(coords_par, d1 = 0, d2 = 1000)
 
-# Convert to spatial weights
+# convert to spatial weights
 #ignore groups that don't have neighbors within specified distance
-lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
+lw = nb2listw(nb, style = "W", zero.policy = TRUE)
+lwpar = nb2listw(nb_par, style = "W", zero.policy = TRUE)
 
 # Perform Moran's I (on raw data)
-moran_result <- moran.test(fvimp_sub900913$impatiens_abundance, lw)
-print(moran_result)
+moran_nbees_raw <- moran.test(fvimp_sub900913$native_bee_abundance, lw)
+moran_richness_raw <- moran.test(fvimp_sub900913$bombus_richness, lw)
+moran_impatiens_raw <- moran.test(fvimp_sub900913$impatiens_abundance, lw)
+moran_crith_raw <- moran.test(fvimp_subpar900913$hascrithidia, lwpar)
+moran_api_raw <- moran.test(fvimp_subpar900913$apicystis, lwpar)
+moran_nos_raw <- moran.test(fvimp_subpar900913$hasnosema, lwpar)
+
 
 #okay so I think there is spatial autocorrelation on the raw values which makes sense
 #however this spatial autocorrelation is quite weak (I < 0.1 for all relationships)
 
 #test spatial autocorrelation on the model residuals
-# Perform Moran's I (on residuals)
-moran_result <- moran.test(fvimp_sub900913$fabun_resid_pred, lw)
-print(moran_result)
+moran_nbees_resid <- moran.test(fvimp_sub900913$babun_resid_pred, lw)
+moran_richness_resid <- moran.test(fvimp_sub900913$brich_resid_pred, lw)
+moran_impatiens_resid <- moran.test(fvimp_sub900913$iabun_resid_pred, lw)
+moran_crith_resid <- moran.test(fvimp_subpar900913$crith_resid_pred, lwpar)
+moran_api_resid <- moran.test(fvimp_subpar900913$api_resid_pred, lwpar)
+moran_nos_resid <- moran.test(fvimp_subpar900913$nos_resid_pred, lwpar)
 
-#modelling accounts for spatial autocorrelation!! all p-values are like 0.99 after
-#modelling and Moran's I stays low :)
-#the only exception to this is the Bombus diversity model -- the pre- and post-model
-#residuals show similar patterns of *very low but significant* spatial autocorrelation
-#this is not surprising given how absolutely trash the diversity model R2 value is
+
+
+#  check for residuals, with 500 m buffer this time
+coords <- st_coordinates(fvimp_sub900913) 
+nb <- dnearneigh(coords, d1 = 0, d2 = 500)
+
+coords_par <- st_coordinates(fvimp_subpar900913) 
+nb_par <- dnearneigh(coords_par, d1 = 0, d2 = 500)
+
+# convert to spatial weights
+#ignore groups that don't have neighbors within specified distance
+lw = nb2listw(nb, style = "W", zero.policy = TRUE)
+lwpar = nb2listw(nb_par, style = "W", zero.policy = TRUE)
+
+moran_nbees_resid <- moran.test(fvimp_sub900913$babun_resid_pred, lw)
+moran_richness_resid <- moran.test(fvimp_sub900913$brich_resid_pred, lw)
+moran_impatiens_resid <- moran.test(fvimp_sub900913$iabun_resid_pred, lw)
+moran_crith_resid <- moran.test(fvimp_subpar900913$crith_resid_pred, lwpar)
+moran_api_resid <- moran.test(fvimp_subpar900913$api_resid_pred, lwpar)
+moran_nos_resid <- moran.test(fvimp_subpar900913$nos_resid_pred, lwpar)
+
+
+plot(lwpar, coords = coords, add=T, col = "red")
