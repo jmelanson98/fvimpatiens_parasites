@@ -1,17 +1,17 @@
 ## FVBombus impatiens parasite dataset
 # code for creating a data frame for input into brms
 # every row is a specimen, but create "empty" rows for sampling points which were surveyed 
-#but specimens not found
+# but specimens not found
 
 rm(list=ls())
 
 #set paths locally
-#setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
-#bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
+bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
 
 #set paths on server
-setwd("/home/melanson/projects/def-ckremen/melanson/fvimpatiens_parasites")
-bombus_path = "/home/melanson/projects/def-ckremen/melanson/"
+#setwd("/home/melanson/projects/def-ckremen/melanson/fvimpatiens_parasites")
+#bombus_path = "/home/melanson/projects/def-ckremen/melanson/"
 
 #load packages
 source('code/src/init.R')
@@ -63,13 +63,13 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 #### - calculate landscape shdi in 500m buffer around each sample_pt
 #### - return a dataframe containing prop_blueberry, prop_edge, and shdi for each sample_pt
 
-landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000, 1250, 1500))
-write.csv(landscapeMetrics, "data/landscapemetrics.csv")
+#landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000, 1250, 1500))
+#write.csv(landscapeMetrics, "data/landscapemetrics.csv")
 
 #OR
-#setwd('/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/pollencode')
-#load(file="saved/landscapeMetrics.Rdata")
-#setwd('/Users/jenna1/Documents/UBC/Bombus Project/FVBombus_code/parasitecode')
+
+landscapeMetrics = read.csv("data/landscapemetrics.csv")
+landscapeMetrics[is.na(landscapeMetrics[])] = 0
 
 
 ## **********************************************************
@@ -86,7 +86,7 @@ write.csv(landscapeMetrics, "data/landscapemetrics.csv")
 #event where no bees were captured. Suitable for bernoulli family parasite models.
 
 brmsdf = prepBRMSdf(sampleEffort, samplePoints, specimenTable, beeflowers, vegData, landscapeMetrics)
-write.csv(brmsdf, "data/fvimp_brmsdf2.csv")
+write.csv(brmsdf, "data/fvimp_brmsdf.csv")
 
 # ## **********************************************************
 # ## Create "adjusted julian date" to account for colony phase

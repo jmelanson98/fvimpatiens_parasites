@@ -116,6 +116,22 @@ prepBRMSdf <- function(sampleEffort, samplePoints, cleanedSpecimens, flowerList,
   samplePoints$lat = rapply(strsplit(gsub("\\(|\\).*", "", samplePoints$gps), split = " "), function(x) tail(x, 1))
   samplePoints$long = rapply(strsplit(gsub("\\(|\\).*", "", samplePoints$gps), split = " "), function(x) head(x, 3)[2])
   samplePoints = samplePoints[,c("sample_pt", "subsite", "lat", "long")]
+  samplePoints$lat = as.numeric(samplePoints$lat)
+  samplePoints$long = as.numeric(samplePoints$long)
+  
+  # determine which points are within 20m of one another (targeting PM, where some transects were re-named after round 1!)
+  dist_matrix <- distm(samplePoints[, c("long", "lat")], fun = distHaversine)
+  pairs <- which(dist_matrix < 20 & lower.tri(dist_matrix), arr.ind = TRUE)
+  
+  close_pairs <- data.frame(
+    name1 = samplePoints$sample_pt[pairs[, 1]],
+    name2 = samplePoints$sample_pt[pairs[, 2]],
+    distance_m = dist_matrix[pairs],
+    lat1 = samplePoints$lat[pairs[, 1]],
+    lon1 = samplePoints$lon[pairs[, 1]],
+    lat2 = samplePoints$lat[pairs[, 2]],
+    lon2 = samplePoints$lon[pairs[, 2]]
+  )
   
   #join sample points to sample effort data
   colnames(sampleEffort)[colnames(sampleEffort) == "sample_point"] = "sample_pt"
@@ -181,15 +197,13 @@ prepBRMSdf <- function(sampleEffort, samplePoints, cleanedSpecimens, flowerList,
   abundance_aggregate$floral_abundance = log10(abundance_aggregate$floral_abundance + 1)
   sampleEffort = left_join(sampleEffort, abundance_aggregate, by = "sample_id")
   
-  #join landscape data to sample effort dataframe
-  sampleEffort = left_join(sampleEffort, landscapeData, by = "sample_pt")
   
   #join sampleEffort dataframe to specimens dataframe
   #check that empty rows (e.g., sampling effort where no bees were captured) are maintained
   brmsdf = full_join(sampleEffort, cleanedSpecimens, by = 'sample_id')
   brmsdf <- brmsdf %>%
-    select(-site.y, -round.y, -sample_pt.y, -year.y) %>%
-    rename(site = site.x,
+    dplyr::select(-site.y, -round.y, -sample_pt.y, -year.y) %>%
+    dplyr::rename(site = site.x,
            round = round.x,
            sample_pt = sample_pt.x,
            year = year.x,
@@ -212,7 +226,17 @@ prepBRMSdf <- function(sampleEffort, samplePoints, cleanedSpecimens, flowerList,
   
   #create a column for native bee abundance
   brmsdf$native_bee_abundance = brmsdf$bombus_abundance - brmsdf$impatiens_abundance
-  print(head(brmsdf))
+  
+  # change sample_pt for close pairs!!!
+  for (row in 1:nrow(brmsdf)){
+    orig.name = brmsdf$sample_pt[row]
+    if (orig.name %in% close_pairs$name2){
+      brmsdf$sample_pt[row] = close_pairs$name1[close_pairs$name2 == orig.name]
+    }
+  }
+  
+  #join landscape data to sample effort dataframe
+  sampleEffort = left_join(sampleEffort, landscapeData, by = "sample_pt")
   
   #remove columns that are not used in brms
   colsToKeep = c("site", "round", "sample_pt", "sample_id", "barcode_id", "caste", 
