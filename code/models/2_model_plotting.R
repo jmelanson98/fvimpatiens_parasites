@@ -117,7 +117,7 @@ babun.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = native_bee_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x="Proportion blueberry", y="Native *Bombus* abundance") +
+  labs(x="", y="") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -146,7 +146,7 @@ babun.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = native_bee_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "Edge density", y = "Native *Bombus* abundance") +
+  labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -233,7 +233,7 @@ brich.fabund <-
   #plot raw data
   ggplot(new.net, aes(x = floral_abundance, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Floral abundance (log)", y = "*Bombus* species richness") +
+  labs(x = "", y = "*Bombus* species richness") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -263,7 +263,7 @@ brich.fdiv <-
   #plot raw data
   ggplot(new.net, aes(x = floral_diversity, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Floral diversity", y = "") +
+  labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -293,7 +293,7 @@ brich.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Proportion blueberry", y = "*Bombus* species richness") +
+  labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -323,7 +323,7 @@ brich.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.1, width = 0.1) +
-  labs(x = "Edge density", y = "*Bombus* species richness") +
+  labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -383,7 +383,7 @@ iabund.fabund <-
   #plot raw data
   ggplot(new.net, aes(x = floral_abundance, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "", y = "*B. impatiens* abundance") +
+  labs(x = "Floral abundance (log)", y = "*B. impatiens* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -413,7 +413,7 @@ iabund.fdiv <-
   #plot raw data
   ggplot(new.net, aes(x = floral_diversity, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "", y = "") +
+  labs(x = "Floral diversity", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -438,7 +438,7 @@ iabund.bberry <-
   #plot raw data
   ggplot(new.net, aes(x = prop_blueberry, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "Proportion blueberry", y = "*B. impatiens* abundance") +
+  labs(x = "Proportion blueberry", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -463,7 +463,7 @@ iabund.edge <-
   #plot raw data
   ggplot(new.net, aes(x = prop_edge, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2) +
-  labs(x = "Edge density", y = "*B. impatiens* abundance") +
+  labs(x = "Edge density", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -842,19 +842,19 @@ casteplot
 ## ***********************************************************************
 
 #FIGURE 3: floral abundance & landscape effects on bee community
-bombusgrid = grid.arrange(babun.fabun, babun.fdiv, babun.bberry, babun.edge,
-                          iabund.fabund, iabund.fdiv, iabund.bberry, iabund.edge,
-                          brich.fabund, brich.fdiv, brich.bberry, brich.edge,
+bombusgrid = grid.arrange(brich.fabund, brich.fdiv, brich.edge, brich.bberry,
+                          babun.fabun, babun.fdiv, babun.edge, babun.bberry, 
+                          iabund.fabund, iabund.fdiv, iabund.edge, iabund.bberry,
                           ncol = 4)
 #add labels
 bombusgrid <- ggdraw() +
   draw_plot(bombusgrid, 0.015, 0, 1, 1) +
-  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)"), 
+  draw_plot_label(c("(A)", "(D)", "(G)", "(J)", "(B)", "(E)", "(H)", "(K)", "(C)", "(F)", "(I)", "(L)"), 
                   x = c(0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75), 
                   y = c(1, 1, 1, 1, 0.66, 0.66, 0.66, 0.66, 0.33, 0.33, 0.33, 0.33))
 
 #export and save
-ggsave(filename = "figures/manuscript_figures/bombusgrid.jpg", 
+ggsave(filename = "figures/manuscript_figures/bombusgrid_vertical.jpg", 
        plot = bombusgrid, 
        width = 4000, 
        height = 3500, 

@@ -8,6 +8,9 @@ source("code/src/misc.R")
 source("code/src/makeMapGrids.R")
 source("code/src/getPhyloMatrix.R")
 
+# load r data
+load(file="saved/AllModels_fv.Rdata")
+
 ## ***********************************************************************
 ## make map plots
 ## ***********************************************************************
@@ -40,20 +43,25 @@ data.workers %>%
 #   ) -> impatiensabundancepersite
 # 
 # #do this again but with native bee abundance as the "central" var
-# fvimp_brmsdf %>%
-#   filter(Subset == TRUE) %>%
-#   group_by(sample_pt) %>%
-#   summarize(
-#     site = min(site),
-#     site_any = mean(native_bee_abundance),
-#     long = min(long),
-#     lat = min(lat),
-#     numbees = n() #this is actually the number of survey events but I'm giving it this name so I can change less code below
-#   ) -> beeabundancepersite
+fvimp_brmsdf %>%
+  filter(!is.na(barcode_id)) %>%
+  filter(round == 1 | round ==2) %>%
+  group_by(sample_pt) %>%
+  summarize(
+    site = min(site),
+    site_any = 1,
+    long = min(long),
+    lat = min(lat),
+    numbees = n() #this is actually the number of survey events but I'm giving it this name so I can change less code below
+  ) -> beeabundancepersite
 
 #note: if you're planning to run this code you need to UNZIP the file "zipped_clipped_rasters.zip"
 #i've compressed it to save space locally and so that it can be pushed to github
 #you will receive a warning that some rows are outside the scale range; don't worry about it
+abundancemap_period1 = makeMapGrids(groupedbysite = beeabundancepersite, 
+                      sampling_effort = "Number of\nspecimens", 
+                      var_of_interest = "NA")
+
 parmap = makeMapGrids(groupedbysite = parbysite, 
              sampling_effort = "Number of\nspecimens", 
              var_of_interest = "Parasite\nprevalence")

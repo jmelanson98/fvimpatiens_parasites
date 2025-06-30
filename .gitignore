@@ -5,3 +5,4 @@
 .Rproj.user
 *.RData
 docs/
+data/zipped_clipped_rasters/
