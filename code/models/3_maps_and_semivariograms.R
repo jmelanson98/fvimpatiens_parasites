@@ -11,6 +11,93 @@ source("code/src/getPhyloMatrix.R")
 # load r data
 load(file="saved/AllModels_fv.Rdata")
 
+
+## ***********************************************************************
+## Plot distributions of landscape metrics
+## ***********************************************************************
+transects = orig.spec %>% 
+  group_by(sample_pt) %>%
+  sample_n(1)
+transect_metrics = transects[,colnames(transects) %in% c("sample_pt", "site", 
+                                                         "prop_blueberry_500", 
+                                                         "prop_edge_500", 
+                                                         "landscape_shdi_500", 
+                                                         "prop_blueberry_1000", 
+                                                         "prop_edge_1000", 
+                                                         "landscape_shdi_1000")]
+transect_metrics_long = transect_metrics %>% 
+  pivot_longer(-c("sample_pt", "site"),
+               names_to = "metric",
+               values_to = "values")
+
+split_parts = strsplit(transect_metrics_long$metric, "_")
+
+transect_metrics_long$prefix = sapply(split_parts, function(x) paste(head(x, -1), collapse = "_"))
+transect_metrics_long$scale = as.numeric(sapply(split_parts, tail, 1))
+
+plot_list = list()
+rows = c("landscape_shdi", "prop_blueberry", "prop_edge")
+columns = c(500, 1000)
+order = expand.grid(rows, columns)
+count = 1
+
+ylims <- list(
+  prop_blueberry = c(0, 1),
+  prop_edge      = c(0, 0.3),
+  landscape_shdi = c(0, 2.5)
+)
+
+for (r in rows){
+  for (c in columns){
+    if(c == 500){
+      if(r == "prop_edge"){
+        ylab = "Edge density"
+      } else if(r == "prop_blueberry"){
+        ylab = "Proportion blueberry"
+      } else if(r== "landscape_shdi"){
+        ylab = "Shannon diversity"
+      }
+    } else{ylab = ""}
+    
+    if(r == "prop_edge"){
+      xlab = "Site"
+    } else{xlab = ""}
+    
+    plot_list[[count]] = ggplot(transect_metrics_long[transect_metrics_long$prefix == r &
+                                                        transect_metrics_long$scale == c,], 
+                                aes(x = site, y = values)) +
+      geom_violin() +
+      ylim(ylims[[r]]) +
+      ylab(ylab) +
+      xlab(xlab) +
+      theme_minimal()
+    count = count + 1
+  }
+}
+
+header1 = ggplot() + theme_void() + ggtitle("500 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+header2 = ggplot() + theme_void() + ggtitle("1000 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+blank = nullGrob()
+
+final = grid.arrange(blank, header1, blank, header2, 
+  blank, plot_list[[1]], blank, plot_list[[2]],
+  blank, blank, blank, blank,
+  blank, plot_list[[3]], blank, plot_list[[4]],
+  blank, blank, blank, blank,
+  blank, plot_list[[5]], blank, plot_list[[6]],
+  ncol = 4,
+  heights = c(0.15, 1, 0.1, 1, 0.1, 1), widths = c(0.1, 1, 0.1, 1))
+site_grid = ggdraw() +
+  draw_plot(final, 0.01, 0, 1, 1) +
+  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)"), 
+                  x = c(0, 0.52, 0, 0.52, 0, 0.52), 
+                  y = c(0.98, 0.98, 0.66, 0.66, 0.33, 0.33))
+
+ggsave("figures/manuscript_figures/landscape_metric_dist.jpg", site_grid,
+       units = "px", height = 1500, width = 2500)
+  
+
+
 ## ***********************************************************************
 ## make map plots
 ## ***********************************************************************
