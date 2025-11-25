@@ -21,7 +21,7 @@ source("code/src/getPhyloMatrix.R")
 source("code/src/runPlotFreqModelDiagnostics.R")
 
 ## **********************************************************
-## formula for site effects on the bee community
+## Standardize data at correct level(s)
 ## **********************************************************
 
 ## all of the variables that are explanatory variables and thus need
@@ -139,20 +139,21 @@ studycov = getPhyloMatrix(studyspecies)
 
 formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
                                         "hascrithidia", 
-                                        xvars.fv.base)
+                                        xvars.fv.base,
+                                        subsetvar = "subsetPar")
 formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
                                    "hasnosema", 
-                                   xvars.fv.base)
+                                   xvars.fv.base,
+                                   subsetvar = "subsetPar")
 formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
-                                        xvars.fv.base)
+                                        xvars.fv.base,
+                                        subsetvar = "subsetPar")
 
 #convert to brms format
 bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
-
-# rerun depending on whether using interactions or not
 bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
 bf.allnos <- bf(formula.allnos.base, family="bernoulli")
 bf.api <- bf(formula.apicystis.base, family="bernoulli")
@@ -211,20 +212,21 @@ plot(pp_check(fit.bombus.all, resp = "apicystis"))
 ## **********************************************************
 formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
                                             "hascrithidia", 
-                                            xvars.fv.inter)
+                                            xvars.fv.inter,
+                                            subsetvar = "subsetPar")
 formula.allnos.inter <-  runParasiteModels(fvimp_brmsdf,
                                           "hasnosema", 
-                                          xvars.fv.inter)
+                                          xvars.fv.inter,
+                                          subsetvar = "subsetPar")
 formula.apicystis.inter <-  runParasiteModels(fvimp_brmsdf,
                                              "apicystis", 
-                                             xvars.fv.inter)
+                                             xvars.fv.inter,
+                                             subsetvar = "subsetPar")
 
 #convert to brms format
 bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
-
-# rerun depending on whether using interactions or not
 bf.allcrith <- bf(formula.allcrith.inter, family="bernoulli")
 bf.allnos <- bf(formula.allnos.inter, family="bernoulli")
 bf.api <- bf(formula.apicystis.inter, family="bernoulli")
@@ -274,6 +276,72 @@ plot(pp_check(fit.bombus.inter, resp = "hascrithidia"))
 plot(pp_check(fit.bombus.inter, resp = "hasnosema"))
 plot(pp_check(fit.bombus.inter, resp = "apicystis"))
 
+
+
+## **********************************************************
+## Run main models on JUST native Bombus
+## **********************************************************
+fvimp_brmsdf$parSubNative = fvimp_brmsdf$subsetPar == TRUE & fvimp_brmsdf$status == "native"
+
+formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
+                                            "hascrithidia", 
+                                            xvars.fv.base,
+                                            subsetvar = "parSubNative")
+formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
+                                          "hasnosema", 
+                                          xvars.fv.base,
+                                          subsetvar = "parSubNative")
+formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
+                                             "apicystis", 
+                                             xvars.fv.base,
+                                             subsetvar = "parSubNative")
+
+#convert to brms format
+bf.brich <- bf(formula.bee.rich, family="beta_binomial")
+bf.babund <- bf(formula.bee.abund, family = "negbinomial")
+bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
+bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
+bf.allnos <- bf(formula.allnos.base, family="bernoulli")
+bf.api <- bf(formula.apicystis.base, family="bernoulli")
+
+bform.par <- bf.allcrith + bf.allnos + bf.api +
+  set_rescor(FALSE)
+bform.base <-  bf.brich + bf.babund + bf.iabund +
+  set_rescor(FALSE)
+bform.all <-  bf.brich + bf.babund + bf.iabund + 
+  bf.allcrith + bf.allnos + bf.api +
+  set_rescor(FALSE)
+
+
+fit.bombus.all <- brm(bform.all, fvimp_brmsdf,
+                      cores=4,
+                      iter = (10^4),
+                      chains = 4,
+                      thin=1,
+                      init=0,
+                      control = list(adapt_delta = 0.999,
+                                     stepsize = 0.001,
+                                     max_treedepth = 20),
+                      data2 = list(studycov = studycov)
+)
+
+
+
+write.ms.table(fit.bombus.all, "AllModels_fv_nativebombus")
+save(fit.bombus.all, fvimp_brmsdf, orig.spec,
+     file="saved/AllModels_fv_nativebombus.Rdata")
+
+load(file="saved/AllModels_fv_nativebombus.Rdata")
+
+summary(fit.bombus.all)
+bayes_R2(fit.bombus.all)
+
+plot(pp_check(fit.bombus.all, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.all, resp="bombusrichness"))
+plot(pp_check(fit.bombus.all, resp = "impatiensabundance"))
+plot(pp_check(fit.bombus.all, resp = "hascrithidia"))
+plot(pp_check(fit.bombus.all, resp = "hasnosema"))
+plot(pp_check(fit.bombus.all, resp = "apicystis"))
 
 ## **********************************************************
 ## Model Checks with DHARMa
