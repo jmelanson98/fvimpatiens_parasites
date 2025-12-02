@@ -1,8 +1,0 @@
-.DS_Store
-.Rapp.history
-.Rhistory
-.pdf
-.Rproj.user
-*.RData
-docs/
-data/zipped_clipped_rasters/
