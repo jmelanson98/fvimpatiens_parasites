@@ -186,13 +186,11 @@ fit.bombus.all <- brm(bform.all, fvimp_brmsdf,
                   data2 = list(studycov = studycov)
 )
 
-
-
-write.ms.table(fit.bombus.all, "AllModels_fv")
+write.ms.table(fit.bombus.all, "AllModels_fv_32610")
 save(fit.bombus.all, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv.Rdata")
+     file="saved/AllModels_fv_32610.Rdata")
 
-load(file="saved/AllModels_fv.Rdata")
+load(file="saved/AllModels_fv_32610.Rdata")
 
 summary(fit.bombus.all)
 bayes_R2(fit.bombus.all)
@@ -251,9 +249,9 @@ fit.bombus.inter <- brm(bform.par, fvimp_brmsdf,
 
 
 
-write.ms.table(fit.bombus.inter, "ParasiteModels_interaction")
+write.ms.table(fit.bombus.inter, "ParasiteModels_interaction_32610")
 save(fit.bombus.inter, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_interaction.Rdata")
+     file="saved/ParasiteModels_interaction_32610.Rdata")
 
 
 ## **********************************************************
@@ -297,9 +295,9 @@ fit.bombus.native <- brm(bform.par, fvimp_brmsdf,
 
 
 
-write.ms.table(fit.bombus.native, "ParasiteModels_nativebombus")
+write.ms.table(fit.bombus.native, "ParasiteModels_nativebombus_32610")
 save(fit.bombus.native, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_nativebombus.Rdata")
+     file="saved/ParasiteModels_nativebombus_32610.Rdata")
 
 
 ## **********************************************************
