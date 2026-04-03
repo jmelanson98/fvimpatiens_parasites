@@ -33,7 +33,13 @@ source("code/src/runPlotFreqModelDiagnostics.R")
 ## by transect location
 vars_transect <- c("prop_blueberry_500",
                "prop_edge_500",
-               "landscape_shdi_500")
+               "landscape_shdi_500",
+               "prop_blueberry_250",
+               "prop_edge_250",
+               "landscape_shdi_250",
+               "prop_blueberry_750",
+               "prop_edge_750",
+               "landscape_shdi_750")
 
 ## standardize by transect and sample round -- day of year and vegetation data
 vars_transect_sr<- c("julian_date",
@@ -55,43 +61,45 @@ fvimp_brmsdf <- prepDataSEM_bernoulli(spec.data = fvimp_brmsdf,
                             vars_transect_sr = vars_transect_sr)
 
 
-
 ## **********************************************************
-## Model 1.1: formula for landscape & floral effects on bee community
+## Random effects of phylogeny
 ## **********************************************************
-#use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
-#these sampling efforts can be included in native bombus abundance models, because it does
-#not affect either. But they must be subseted out of all other models; luckily we did not screen any bees for parasites from
-#those days, so this does not effect subsetPar
+#create phylo variance-covariance matrix for group of study species
+studyspecies = c("Bombus_mixtus", "Bombus_flavifrons", "Bombus_rufocinctus", "Bombus_californicus", 
+                 "Bombus_impatiens", "Bombus_vosnesenskii", "Bombus_sitkensis", "Bombus_melanopygus", 
+                 "Bombus_nevadensis", "Bombus_medius")
+studycov = getPhyloMatrix(studyspecies)
 
+
+## ************************************************************************************
+## Model 1.1: formula for landscape & floral effects on bee community -- 500m buffer
+## ************************************************************************************
+# use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
+# these sampling efforts can be included in native bombus abundance models, 
+# but they must be subseted out of all other models; luckily we did not screen any bees for parasites from
+# those days, so this does not effect subsetPar
 
 formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
                               floral_abundance + floral_diversity +
                               prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
                               julian_date + I(julian_date^2) +
-                              (1|sample_pt)
-)
-
-
+                              (1|sample_pt))
 formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
                                floral_abundance + floral_diversity +
                                prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
                                julian_date + I(julian_date^2) +
-                                 (1|sample_pt)  
-                             )
-
+                                 (1|sample_pt)  )
 formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
                                floral_abundance + floral_diversity +
                                prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
                                julian_date + I(julian_date^2) +
-                               (1|sample_pt)  
-)
+                               (1|sample_pt))
 
-## **********************************************************
-## Model 1.2: formula for bee community effects on parasitism
-## **********************************************************
+## ******************************************************************************
+## Model 1.2: formula for bee community effects on parasitism -- 500m buffer
+## ******************************************************************************
 
-xvars.fv.base <- c("floral_abundance",
+xvars.base.native <- c("floral_abundance",
                     "floral_diversity",
                     "bombus_richness",
                     "native_bee_abundance",
@@ -104,50 +112,36 @@ xvars.fv.base <- c("floral_abundance",
                     "I(julian_date^2)",
                     "(1|subsite)",
                     "(1|sample_pt)",
-                   "(1|gr(final_id,cov = studycov))"
-                 )
+                   "(1|gr(final_id,cov = studycov))")
 
-xvars.fv.inter <- c("floral_abundance",
-                   "floral_diversity",
-                   "bombus_richness",
-                   "native_bee_abundance*status",
-                   "impatiens_abundance*status",
-                   "prop_blueberry_500",
-                   "prop_edge_500",
-                   "landscape_shdi_500",
-                   "caste",
-                   "julian_date",
-                   "I(julian_date^2)",
-                   "(1|subsite)",
-                   "(1|sample_pt)",
-                   "(1|gr(final_id,cov = studycov))"
-)
+xvars.base.impatiens <- c("floral_abundance",
+                          "floral_diversity",
+                          "bombus_richness",
+                          "native_bee_abundance",
+                          "impatiens_abundance",
+                          "prop_blueberry_500",
+                          "prop_edge_500",
+                          "landscape_shdi_500",
+                          "julian_date",
+                          "I(julian_date^2)",
+                          "(1|subsite)",
+                          "(1|sample_pt)")
 
 ## **********************************************************
-## Random effects of phylogeny
-## **********************************************************
-#create phylo variance-covariance matrix for group of study species
-studyspecies = c("Bombus_mixtus", "Bombus_flavifrons", "Bombus_rufocinctus", "Bombus_californicus", 
-                 "Bombus_impatiens", "Bombus_vosnesenskii", "Bombus_sitkensis", "Bombus_melanopygus", 
-                 "Bombus_nevadensis", "Bombus_medius")
-studycov = getPhyloMatrix(studyspecies)
-
-
-## **********************************************************
-## Run main models
+## Run 500 m buffer models
 ## **********************************************************
 
-formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
+formula.allcrith.native <-  runParasiteModels(fvimp_brmsdf,
                                         "hascrithidia", 
-                                        xvars.fv.base,
+                                        xvars.base.native,
                                         subsetvar = "subsetPar")
-formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
+formula.allnos.native <-  runParasiteModels(fvimp_brmsdf,
                                    "hasnosema", 
-                                   xvars.fv.base,
+                                   xvars.base.native,
                                    subsetvar = "subsetPar")
-formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
+formula.apicystis.native <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
-                                        xvars.fv.base,
+                                        xvars.base.native,
                                         subsetvar = "subsetPar")
 
 #convert to brms format
@@ -186,13 +180,11 @@ fit.bombus.all <- brm(bform.all, fvimp_brmsdf,
                   data2 = list(studycov = studycov)
 )
 
-
-
-write.ms.table(fit.bombus.all, "AllModels_fv")
+write.ms.table(fit.bombus.all, "AllModels_fv_32610")
 save(fit.bombus.all, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv.Rdata")
+     file="saved/AllModels_fv_32610.Rdata")
 
-load(file="saved/AllModels_fv.Rdata")
+load(file="saved/AllModels_fv_32610.Rdata")
 
 summary(fit.bombus.all)
 bayes_R2(fit.bombus.all)
@@ -251,9 +243,9 @@ fit.bombus.inter <- brm(bform.par, fvimp_brmsdf,
 
 
 
-write.ms.table(fit.bombus.inter, "ParasiteModels_interaction")
+write.ms.table(fit.bombus.inter, "ParasiteModels_interaction_32610")
 save(fit.bombus.inter, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_interaction.Rdata")
+     file="saved/ParasiteModels_interaction_32610.Rdata")
 
 
 ## **********************************************************
@@ -297,9 +289,9 @@ fit.bombus.native <- brm(bform.par, fvimp_brmsdf,
 
 
 
-write.ms.table(fit.bombus.native, "ParasiteModels_nativebombus")
+write.ms.table(fit.bombus.native, "ParasiteModels_nativebombus_32610")
 save(fit.bombus.native, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_nativebombus.Rdata")
+     file="saved/ParasiteModels_nativebombus_32610.Rdata")
 
 
 ## **********************************************************

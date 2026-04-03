@@ -33,10 +33,15 @@ vegData = as.data.frame(read.csv(paste(bombus_path, "raw_data/2022vegetationdata
 parasiteScores = as.data.frame(read.csv(paste(bombus_path, "raw_data/2022parasitedata.csv", sep = ""), sep = ","))
 parasiteScores$barcode_id[parasiteScores$barcode_id == "HR1_14_01"] = "HR1_14A_01"
 
-# load landscape raster/shapefiles
-landscape1 <- raster(paste(bombus_path, "landscape/rasters/FValley_lc_1res.tif", sep = ""))
-fv_points <- read_sf(paste(bombus_path, "raw_data/fvbombus/fvbombus_points.shp", sep = ""))
+# load and transform landscape raster/shapefiles
+landscape1 = raster(paste(bombus_path, "landscape/full_rasters/FValley_lc_1res.tif", sep = ""))
+crs(landscape1) = "EPSG:900913"
+landscape1 = project(rast(landscape1), "EPSG:32610", res = 2, method = "near")
+landscape1 = terra::as.int(landscape1)
+
+fv_points = read_sf(paste(bombus_path, "raw_data/fvbombus/fvbombus_points.shp", sep = ""))
 fv_points2022 = fv_points[fv_points$site_id %in% sampleEffort$sample_point,]
+fv_points2022 = st_transform(fv_points2022, "EPSG:32610")
 landcover = read_csv(paste(bombus_path, "raw_data/landcover.csv", sep = ""))
 
 #create a list of all the flowers visited by bumblebees in 2022 + 2023 (used for veg abundance/diversity)
@@ -63,13 +68,41 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 #### - calculate landscape shdi in 500m buffer around each sample_pt
 #### - return a dataframe containing prop_blueberry, prop_edge, and shdi for each sample_pt
 
-#landscapeMetrics = calculateLandscapeMetrics(landscape1, fv_points2022, landcover, buffer.sizes = c(250, 500, 750, 1000, 1250, 1500))
-#write.csv(landscapeMetrics, "data/landscapemetrics.csv")
+landscapeMetrics = calculateLandscapeMetrics(landcover.raster = landscape1, 
+                                             site.shapefile = fv_points2022, 
+                                             landcover.classification = landcover,
+                                             buffer.sizes = c(250, 500, 750))
+write.csv(landscapeMetrics, "data/landscapemetrics_32610.csv")
 
 #OR
 
-landscapeMetrics = read.csv("data/landscapemetrics.csv")
-landscapeMetrics[is.na(landscapeMetrics[])] = 0
+landscapeMetricsWrong = read.csv("data/landscapemetrics.csv")
+
+
+# wrong500 = landscapeMetricsWrong[c("sample_pt", "prop_blueberry_500", "prop_edge_500")]
+# colnames(wrong500) = c("sample_pt", "prop_blueberry_wrong", "prop_edge_wrong")
+# allmetrics = left_join(wrong500, landscapeMetrics)
+# 
+# df_blueberry = allmetrics %>%
+#   pivot_longer(cols = c(prop_blueberry_wrong, prop_blueberry_330, prop_blueberry_500), 
+#                names_to = "buffer", 
+#                values_to = "value") %>%
+#   mutate(buffer = factor(buffer, levels = c("prop_blueberry_wrong", "prop_blueberry_330", "prop_blueberry_500")))
+# 
+# ggplot(df_blueberry, aes(x = buffer, y = value, group = sample_pt)) +
+#   geom_point() +
+#   geom_line(alpha = 0.3)
+# 
+# 
+# df_edge = allmetrics %>%
+#   pivot_longer(cols = c(prop_edge_wrong, prop_edge_330, prop_edge_500), 
+#                names_to = "buffer", 
+#                values_to = "value") %>%
+#   mutate(buffer = factor(buffer, levels = c("prop_edge_wrong", "prop_edge_330", "prop_edge_500")))
+# 
+# ggplot(df_edge, aes(x = buffer, y = value, group = sample_pt)) +
+#   geom_point() +
+#   geom_line(alpha = 0.3)
 
 
 ## **********************************************************
