@@ -36,8 +36,8 @@ parasiteScores$barcode_id[parasiteScores$barcode_id == "HR1_14_01"] = "HR1_14A_0
 # load and transform landscape raster/shapefiles
 landscape1 = raster(paste(bombus_path, "landscape/full_rasters/FValley_lc_1res.tif", sep = ""))
 crs(landscape1) = "EPSG:900913"
-landscape1 = as.int(rast(landscape1))
 landscape1 = project(rast(landscape1), "EPSG:32610", res = 2, method = "near")
+landscape1 = terra::as.int(landscape1)
 
 fv_points = read_sf(paste(bombus_path, "raw_data/fvbombus/fvbombus_points.shp", sep = ""))
 fv_points2022 = fv_points[fv_points$site_id %in% sampleEffort$sample_point,]
@@ -71,13 +71,12 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 landscapeMetrics = calculateLandscapeMetrics(landcover.raster = landscape1, 
                                              site.shapefile = fv_points2022, 
                                              landcover.classification = landcover,
-                                             buffer.sizes = c(250, 500))
+                                             buffer.sizes = c(250, 500, 750))
 write.csv(landscapeMetrics, "data/landscapemetrics_32610.csv")
 
 #OR
 
 landscapeMetricsWrong = read.csv("data/landscapemetrics.csv")
-landscapeMetricsWrong[is.na(landscapeMetricsWrong)] = 0
 
 
 # wrong500 = landscapeMetricsWrong[c("sample_pt", "prop_blueberry_500", "prop_edge_500")]
