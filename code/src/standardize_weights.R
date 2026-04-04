@@ -245,7 +245,7 @@ prepDataSEM_bernoulli <-
     
     #convert Weights/WeightPar columns into Subset/SubsetPar columns
     spec.data$subsetImpPar = spec.data$WeightsPar > 0 & spec.data$final_id == "Bombus_impatiens"
-    spec.data$subsetNativePar = spec.data[spec.data$WeightsPar > 0 & spec.data$final_id != "Bombus_impatiens"
+    spec.data$subsetNativePar = spec.data$WeightsPar > 0 & spec.data$final_id != "Bombus_impatiens"
     spec.data$Subset = spec.data$Weights > 0
     spec.data$impSubset = spec.data$Subset & spec.data$sampledImp #same as subset, but rows where we did not sample for impatiens are now FALSE
     

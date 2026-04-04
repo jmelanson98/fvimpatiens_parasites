@@ -8,9 +8,6 @@ setwd("~/Documents/UBC/bombus_project/fvimpatiens_parasites")
 
 rm(list=ls())
 
-## set to the number of cores you would like the models to run on
-ncores <- 4
-
 fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 source("code/src/init.R")
 source("code/src/misc.R")
@@ -134,32 +131,45 @@ xvars.base.impatiens <- c("floral_abundance",
 formula.allcrith.native <-  runParasiteModels(fvimp_brmsdf,
                                         "hascrithidia", 
                                         xvars.base.native,
-                                        subsetvar = "subsetPar")
+                                        subsetvar = "subsetNativePar")
 formula.allnos.native <-  runParasiteModels(fvimp_brmsdf,
                                    "hasnosema", 
                                    xvars.base.native,
-                                   subsetvar = "subsetPar")
+                                   subsetvar = "subsetNativePar")
 formula.apicystis.native <-  runParasiteModels(fvimp_brmsdf,
                                         "apicystis", 
                                         xvars.base.native,
-                                        subsetvar = "subsetPar")
+                                        subsetvar = "subsetNativePar")
+formula.allcrith.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                              "hascrithidia", 
+                                              xvars.base.impatiens,
+                                              subsetvar = "subsetImpPar")
+formula.allnos.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                            "hasnosema", 
+                                            xvars.base.impatiens,
+                                            subsetvar = "subsetImpPar")
+formula.apicystis.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                               "apicystis", 
+                                               xvars.base.impatiens,
+                                               subsetvar = "subsetImpPar")
 
 #convert to brms format
 bf.brich <- bf(formula.bee.rich, family="beta_binomial")
 bf.babund <- bf(formula.bee.abund, family = "negbinomial")
 bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
-bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
-bf.allnos <- bf(formula.allnos.base, family="bernoulli")
-bf.api <- bf(formula.apicystis.base, family="bernoulli")
+bf.crith.native <- bf(formula.allcrith.native, family="bernoulli")
+bf.nos.native <- bf(formula.allnos.native, family="bernoulli")
+bf.api.native <- bf(formula.apicystis.native, family="bernoulli")
+bf.crith.impatiens <- bf(formula.allcrith.impatiens, family="bernoulli")
+bf.nos.impatiens <- bf(formula.allnos.impatiens, family="bernoulli")
+bf.api.impatiens <- bf(formula.apicystis.impatiens, family="bernoulli")
 
-bform.par <- bf.allcrith + bf.allnos + bf.api +
+bform.par.native <- bf.crith.native + bf.nos.native + bf.api.native +
+  set_rescor(FALSE)
+bform.par.impatiens <- bf.crith.impatiens + bf.api.impatiens +
   set_rescor(FALSE)
 bform.base <-  bf.brich + bf.babund + bf.iabund +
   set_rescor(FALSE)
-bform.all <-  bf.brich + bf.babund + bf.iabund + 
-  bf.allcrith + bf.allnos + bf.api +
-  set_rescor(FALSE)
-
 
 #this will likely not run on brms 2.22.0
 #not entirely sure why but gradient evaluation on the beta binomial
@@ -168,68 +178,51 @@ bform.all <-  bf.brich + bf.babund + bf.iabund +
 #properly recompiled when you switch over...otherwise it will still
 #be slow. this makes me think it's a difference in how the model
 #gets specified in stan...?)
-fit.bombus.all <- brm(bform.all, fvimp_brmsdf,
-                  cores=4,
-                  iter = (10^4),
-                  chains = 4,
-                  thin=1,
-                  init=0,
+fit.bombus.base <- brm(bform.base, fvimp_brmsdf,
+                  cores=4, chains = 4,
+                  iter = 10^4, init=0,
                   control = list(adapt_delta = 0.999,
                                  stepsize = 0.001,
-                                 max_treedepth = 20),
-                  data2 = list(studycov = studycov)
-)
+                                 max_treedepth = 20))
 
-write.ms.table(fit.bombus.all, "AllModels_fv_32610")
-save(fit.bombus.all, fvimp_brmsdf, orig.spec,
-     file="saved/AllModels_fv_32610.Rdata")
+write.ms.table(fit.bombus.base, "Base500m_32610")
+save(fit.bombus.base, fvimp_brmsdf, orig.spec,
+     file="saved/Base500m_32610.Rdata")
+load(file="saved/Base500m_32610.Rdata")
 
-load(file="saved/AllModels_fv_32610.Rdata")
-
-summary(fit.bombus.all)
-bayes_R2(fit.bombus.all)
-
-plot(pp_check(fit.bombus.all, resp="nativebeeabundance"))
-plot(pp_check(fit.bombus.all, resp="bombusrichness"))
-plot(pp_check(fit.bombus.all, resp = "impatiensabundance"))
-plot(pp_check(fit.bombus.all, resp = "hascrithidia"))
-plot(pp_check(fit.bombus.all, resp = "hasnosema"))
-plot(pp_check(fit.bombus.all, resp = "apicystis"))
+# Some quick model checks
+summary(fit.bombus.base)
+bayes_R2(fit.bombus.base)
+plot(pp_check(fit.bombus.base, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.base, resp="bombusrichness"))
+plot(pp_check(fit.bombus.base, resp = "impatiensabundance"))
 
 
+fit.par.native <- brm(bform.par.native, fvimp_brmsdf,
+                       cores=4,
+                       iter = (10^4),
+                       chains = 4,
+                       thin=1,
+                       init=0,
+                       control = list(adapt_delta = 0.999,
+                                      stepsize = 0.001,
+                                      max_treedepth = 20),
+                       data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.native, "NativePar500m_32610")
+save(fit.par.native, fvimp_brmsdf, orig.spec,
+     file="saved/NativePar500m_32610.Rdata")
+load(file="saved/NativePar500m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.native)
+bayes_R2(fit.par.native)
+plot(pp_check(fit.par.native, resp = "hascrithidia"))
+plot(pp_check(fit.par.native, resp = "hasnosema"))
+plot(pp_check(fit.par.native, resp = "apicystis"))
 
 
-## **********************************************************
-## Run parasite models with interactions
-## **********************************************************
-formula.allcrith.inter <-  runParasiteModels(fvimp_brmsdf,
-                                            "hascrithidia", 
-                                            xvars.fv.inter,
-                                            subsetvar = "subsetPar")
-formula.allnos.inter <-  runParasiteModels(fvimp_brmsdf,
-                                          "hasnosema", 
-                                          xvars.fv.inter,
-                                          subsetvar = "subsetPar")
-formula.apicystis.inter <-  runParasiteModels(fvimp_brmsdf,
-                                             "apicystis", 
-                                             xvars.fv.inter,
-                                             subsetvar = "subsetPar")
-
-#convert to brms format
-bf.allcrith <- bf(formula.allcrith.inter, family="bernoulli")
-bf.allnos <- bf(formula.allnos.inter, family="bernoulli")
-bf.api <- bf(formula.apicystis.inter, family="bernoulli")
-
-
-bform.par <- bf.allcrith + bf.allnos + bf.api +
-  set_rescor(FALSE)
-
-
-##set priors for pesky interaction term -- only need this if running interaction model on nosema, but we decided it doesnt have enough data :(
-#prior <- c(set_prior("normal(0, 1)", class = "b", coef = "native_bee_abundance:statusnonnative", resp = "hasnosema"))
-
-#run model with interaction
-fit.bombus.inter <- brm(bform.par, fvimp_brmsdf,
+fit.par.impatiens <- brm(bform.par.impatiens, fvimp_brmsdf,
                       cores=4,
                       iter = (10^4),
                       chains = 4,
@@ -238,44 +231,154 @@ fit.bombus.inter <- brm(bform.par, fvimp_brmsdf,
                       control = list(adapt_delta = 0.999,
                                      stepsize = 0.001,
                                      max_treedepth = 20),
-                      data2 = list(studycov = studycov)
-)
+                      data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.impatiens, "ImpatiensPar500m_32610")
+save(fit.par.impatiens, fvimp_brmsdf, orig.spec,
+     file="saved/ImpatiensPar500m_32610.Rdata")
+load(file="saved/ImpatiensPar500m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.impatiens)
+bayes_R2(fit.par.impatiens)
+plot(pp_check(fit.par.impatiens, resp = "hascrithidia"))
+plot(pp_check(fit.par.impatiens, resp = "apicystis"))
 
 
 
-write.ms.table(fit.bombus.inter, "ParasiteModels_interaction_32610")
-save(fit.bombus.inter, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_interaction_32610.Rdata")
 
+
+## ************************************************************************************
+## Model 2.1: formula for landscape & floral effects on bee community -- 250m buffer
+## ************************************************************************************
+# use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
+# these sampling efforts can be included in native bombus abundance models, 
+# but they must be subseted out of all other models; luckily we did not screen any bees for parasites from
+# those days, so this does not effect subsetPar
+
+formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
+                              floral_abundance + floral_diversity +
+                              prop_blueberry_250 + prop_edge_250 + landscape_shdi_250 + 
+                              julian_date + I(julian_date^2) +
+                              (1|sample_pt))
+formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
+                               floral_abundance + floral_diversity +
+                               prop_blueberry_250 + prop_edge_250 + landscape_shdi_250 + 
+                               julian_date + I(julian_date^2) +
+                               (1|sample_pt)  )
+formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
+                               floral_abundance + floral_diversity +
+                               prop_blueberry_250 + prop_edge_250 + landscape_shdi_250 + 
+                               julian_date + I(julian_date^2) +
+                               (1|sample_pt))
+
+## ******************************************************************************
+## Model 2.2: formula for bee community effects on parasitism -- 250m buffer
+## ******************************************************************************
+
+xvars.base.native <- c("floral_abundance",
+                       "floral_diversity",
+                       "bombus_richness",
+                       "native_bee_abundance",
+                       "impatiens_abundance",
+                       "prop_blueberry_250",
+                       "prop_edge_250",
+                       "landscape_shdi_250",
+                       "caste",
+                       "julian_date",
+                       "I(julian_date^2)",
+                       "(1|subsite)",
+                       "(1|sample_pt)",
+                       "(1|gr(final_id,cov = studycov))")
+
+xvars.base.impatiens <- c("floral_abundance",
+                          "floral_diversity",
+                          "bombus_richness",
+                          "native_bee_abundance",
+                          "impatiens_abundance",
+                          "prop_blueberry_250",
+                          "prop_edge_250",
+                          "landscape_shdi_250",
+                          "julian_date",
+                          "I(julian_date^2)",
+                          "(1|subsite)",
+                          "(1|sample_pt)")
 
 ## **********************************************************
-## Run main models on JUST native Bombus
+## Run 250 m buffer models
 ## **********************************************************
-fvimp_brmsdf$parSubNative = fvimp_brmsdf$subsetPar == TRUE & fvimp_brmsdf$status == "native"
 
-formula.allcrith.base <-  runParasiteModels(fvimp_brmsdf,
-                                            "hascrithidia", 
-                                            xvars.fv.base,
-                                            subsetvar = "parSubNative")
-formula.allnos.base <-  runParasiteModels(fvimp_brmsdf,
-                                          "hasnosema", 
-                                          xvars.fv.base,
-                                          subsetvar = "parSubNative")
-formula.apicystis.base <-  runParasiteModels(fvimp_brmsdf,
-                                             "apicystis", 
-                                             xvars.fv.base,
-                                             subsetvar = "parSubNative")
+formula.allcrith.native <-  runParasiteModels(fvimp_brmsdf,
+                                              "hascrithidia", 
+                                              xvars.base.native,
+                                              subsetvar = "subsetNativePar")
+formula.allnos.native <-  runParasiteModels(fvimp_brmsdf,
+                                            "hasnosema", 
+                                            xvars.base.native,
+                                            subsetvar = "subsetNativePar")
+formula.apicystis.native <-  runParasiteModels(fvimp_brmsdf,
+                                               "apicystis", 
+                                               xvars.base.native,
+                                               subsetvar = "subsetNativePar")
+formula.allcrith.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                                 "hascrithidia", 
+                                                 xvars.base.impatiens,
+                                                 subsetvar = "subsetImpPar")
+formula.allnos.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                               "hasnosema", 
+                                               xvars.base.impatiens,
+                                               subsetvar = "subsetImpPar")
+formula.apicystis.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                                  "apicystis", 
+                                                  xvars.base.impatiens,
+                                                  subsetvar = "subsetImpPar")
 
 #convert to brms format
-bf.allcrith <- bf(formula.allcrith.base, family="bernoulli")
-bf.allnos <- bf(formula.allnos.base, family="bernoulli")
-bf.api <- bf(formula.apicystis.base, family="bernoulli")
+bf.brich <- bf(formula.bee.rich, family="beta_binomial")
+bf.babund <- bf(formula.bee.abund, family = "negbinomial")
+bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
+bf.crith.native <- bf(formula.allcrith.native, family="bernoulli")
+bf.nos.native <- bf(formula.allnos.native, family="bernoulli")
+bf.api.native <- bf(formula.apicystis.native, family="bernoulli")
+bf.crith.impatiens <- bf(formula.allcrith.impatiens, family="bernoulli")
+bf.nos.impatiens <- bf(formula.allnos.impatiens, family="bernoulli")
+bf.api.impatiens <- bf(formula.apicystis.impatiens, family="bernoulli")
 
-bform.par <- bf.allcrith + bf.allnos + bf.api +
+bform.par.native <- bf.crith.native + bf.nos.native + bf.api.native +
+  set_rescor(FALSE)
+bform.par.impatiens <- bf.crith.impatiens + bf.api.impatiens +
+  set_rescor(FALSE)
+bform.base <-  bf.brich + bf.babund + bf.iabund +
   set_rescor(FALSE)
 
+#this will likely not run on brms 2.22.0
+#not entirely sure why but gradient evaluation on the beta binomial
+#becomes EXTREMELY slow
+#run on brms version 2.20.4 (and make sure the c++ file is 
+#properly recompiled when you switch over...otherwise it will still
+#be slow. this makes me think it's a difference in how the model
+#gets specified in stan...?)
+fit.bombus.base <- brm(bform.base, fvimp_brmsdf,
+                       cores=4, chains = 4,
+                       iter = 10^4, init=0,
+                       control = list(adapt_delta = 0.999,
+                                      stepsize = 0.001,
+                                      max_treedepth = 20))
 
-fit.bombus.native <- brm(bform.par, fvimp_brmsdf,
+write.ms.table(fit.bombus.base, "Base250m_32610")
+save(fit.bombus.base, fvimp_brmsdf, orig.spec,
+     file="saved/Base250m_32610.Rdata")
+load(file="saved/Base250m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.bombus.base)
+bayes_R2(fit.bombus.base)
+plot(pp_check(fit.bombus.base, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.base, resp="bombusrichness"))
+plot(pp_check(fit.bombus.base, resp = "impatiensabundance"))
+
+
+fit.par.native <- brm(bform.par.native, fvimp_brmsdf,
                       cores=4,
                       iter = (10^4),
                       chains = 4,
@@ -284,14 +387,221 @@ fit.bombus.native <- brm(bform.par, fvimp_brmsdf,
                       control = list(adapt_delta = 0.999,
                                      stepsize = 0.001,
                                      max_treedepth = 20),
-                      data2 = list(studycov = studycov)
-)
+                      data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.native, "NativePar250m_32610")
+save(fit.par.native, fvimp_brmsdf, orig.spec,
+     file="saved/NativePar250m_32610.Rdata")
+load(file="saved/NativePar250m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.native)
+bayes_R2(fit.par.native)
+plot(pp_check(fit.par.native, resp = "hascrithidia"))
+plot(pp_check(fit.par.native, resp = "hasnosema"))
+plot(pp_check(fit.par.native, resp = "apicystis"))
+
+
+fit.par.impatiens <- brm(bform.par.impatiens, fvimp_brmsdf,
+                         cores=4,
+                         iter = (10^4),
+                         chains = 4,
+                         thin=1,
+                         init=0,
+                         control = list(adapt_delta = 0.999,
+                                        stepsize = 0.001,
+                                        max_treedepth = 20),
+                         data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.impatiens, "ImpatiensPar250m_32610")
+save(fit.par.impatiens, fvimp_brmsdf, orig.spec,
+     file="saved/ImpatiensPar250m_32610.Rdata")
+load(file="saved/ImpatiensPar250m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.impatiens)
+bayes_R2(fit.par.impatiens)
+plot(pp_check(fit.par.impatiens, resp = "hascrithidia"))
+plot(pp_check(fit.par.impatiens, resp = "apicystis"))
 
 
 
-write.ms.table(fit.bombus.native, "ParasiteModels_nativebombus_32610")
-save(fit.bombus.native, fvimp_brmsdf, orig.spec,
-     file="saved/ParasiteModels_nativebombus_32610.Rdata")
+## ************************************************************************************
+## Model 2.1: formula for landscape & floral effects on bee community -- 750m buffer
+## ************************************************************************************
+# use different subsets because there were several days at the beginning of the season when we did not collect impatiens;
+# these sampling efforts can be included in native bombus abundance models, 
+# but they must be subseted out of all other models; luckily we did not screen any bees for parasites from
+# those days, so this does not effect subsetPar
+
+formula.bee.rich <- formula(bombus_richness | trials(9) + subset(impSubset) ~
+                              floral_abundance + floral_diversity +
+                              prop_blueberry_750 + prop_edge_750 + landscape_shdi_750 + 
+                              julian_date + I(julian_date^2) +
+                              (1|sample_pt))
+formula.bee.abund <- formula(native_bee_abundance | subset(Subset)~
+                               floral_abundance + floral_diversity +
+                               prop_blueberry_750 + prop_edge_750 + landscape_shdi_750 + 
+                               julian_date + I(julian_date^2) +
+                               (1|sample_pt)  )
+formula.imp.abund <- formula(impatiens_abundance | subset(impSubset)~
+                               floral_abundance + floral_diversity +
+                               prop_blueberry_750 + prop_edge_750 + landscape_shdi_750 + 
+                               julian_date + I(julian_date^2) +
+                               (1|sample_pt))
+
+## ******************************************************************************
+## Model 2.2: formula for bee community effects on parasitism -- 750m buffer
+## ******************************************************************************
+
+xvars.base.native <- c("floral_abundance",
+                       "floral_diversity",
+                       "bombus_richness",
+                       "native_bee_abundance",
+                       "impatiens_abundance",
+                       "prop_blueberry_750",
+                       "prop_edge_750",
+                       "landscape_shdi_750",
+                       "caste",
+                       "julian_date",
+                       "I(julian_date^2)",
+                       "(1|subsite)",
+                       "(1|sample_pt)",
+                       "(1|gr(final_id,cov = studycov))")
+
+xvars.base.impatiens <- c("floral_abundance",
+                          "floral_diversity",
+                          "bombus_richness",
+                          "native_bee_abundance",
+                          "impatiens_abundance",
+                          "prop_blueberry_750",
+                          "prop_edge_750",
+                          "landscape_shdi_750",
+                          "julian_date",
+                          "I(julian_date^2)",
+                          "(1|subsite)",
+                          "(1|sample_pt)")
+
+## **********************************************************
+## Run 750 m buffer models
+## **********************************************************
+
+formula.allcrith.native <-  runParasiteModels(fvimp_brmsdf,
+                                              "hascrithidia", 
+                                              xvars.base.native,
+                                              subsetvar = "subsetNativePar")
+formula.allnos.native <-  runParasiteModels(fvimp_brmsdf,
+                                            "hasnosema", 
+                                            xvars.base.native,
+                                            subsetvar = "subsetNativePar")
+formula.apicystis.native <-  runParasiteModels(fvimp_brmsdf,
+                                               "apicystis", 
+                                               xvars.base.native,
+                                               subsetvar = "subsetNativePar")
+formula.allcrith.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                                 "hascrithidia", 
+                                                 xvars.base.impatiens,
+                                                 subsetvar = "subsetImpPar")
+formula.allnos.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                               "hasnosema", 
+                                               xvars.base.impatiens,
+                                               subsetvar = "subsetImpPar")
+formula.apicystis.impatiens <-  runParasiteModels(fvimp_brmsdf,
+                                                  "apicystis", 
+                                                  xvars.base.impatiens,
+                                                  subsetvar = "subsetImpPar")
+
+#convert to brms format
+bf.brich <- bf(formula.bee.rich, family="beta_binomial")
+bf.babund <- bf(formula.bee.abund, family = "negbinomial")
+bf.iabund <- bf(formula.imp.abund, family = "negbinomial")
+bf.crith.native <- bf(formula.allcrith.native, family="bernoulli")
+bf.nos.native <- bf(formula.allnos.native, family="bernoulli")
+bf.api.native <- bf(formula.apicystis.native, family="bernoulli")
+bf.crith.impatiens <- bf(formula.allcrith.impatiens, family="bernoulli")
+bf.nos.impatiens <- bf(formula.allnos.impatiens, family="bernoulli")
+bf.api.impatiens <- bf(formula.apicystis.impatiens, family="bernoulli")
+
+bform.par.native <- bf.crith.native + bf.nos.native + bf.api.native +
+  set_rescor(FALSE)
+bform.par.impatiens <- bf.crith.impatiens +bf.api.impatiens +
+  set_rescor(FALSE)
+bform.base <-  bf.brich + bf.babund + bf.iabund +
+  set_rescor(FALSE)
+
+#this will likely not run on brms 2.22.0
+#not entirely sure why but gradient evaluation on the beta binomial
+#becomes EXTREMELY slow
+#run on brms version 2.20.4 (and make sure the c++ file is 
+#properly recompiled when you switch over...otherwise it will still
+#be slow. this makes me think it's a difference in how the model
+#gets specified in stan...?)
+fit.bombus.base <- brm(bform.base, fvimp_brmsdf,
+                       cores=4, chains = 4,
+                       iter = 10^4, init=0,
+                       control = list(adapt_delta = 0.999,
+                                      stepsize = 0.001,
+                                      max_treedepth = 20))
+
+write.ms.table(fit.bombus.base, "Base750m_32610")
+save(fit.bombus.base, fvimp_brmsdf, orig.spec,
+     file="saved/Base750m_32610.Rdata")
+load(file="saved/Base750m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.bombus.base)
+bayes_R2(fit.bombus.base)
+plot(pp_check(fit.bombus.base, resp="nativebeeabundance"))
+plot(pp_check(fit.bombus.base, resp="bombusrichness"))
+plot(pp_check(fit.bombus.base, resp = "impatiensabundance"))
+
+
+fit.par.native <- brm(bform.par.native, fvimp_brmsdf,
+                      cores=4,
+                      iter = (10^4),
+                      chains = 4,
+                      thin=1,
+                      init=0,
+                      control = list(adapt_delta = 0.999,
+                                     stepsize = 0.001,
+                                     max_treedepth = 20),
+                      data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.native, "NativePar750m_32610")
+save(fit.par.native, fvimp_brmsdf, orig.spec,
+     file="saved/NativePar750m_32610.Rdata")
+load(file="saved/NativePar750m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.native)
+bayes_R2(fit.par.native)
+plot(pp_check(fit.par.native, resp = "hascrithidia"))
+plot(pp_check(fit.par.native, resp = "hasnosema"))
+plot(pp_check(fit.par.native, resp = "apicystis"))
+
+
+fit.par.impatiens <- brm(bform.par.impatiens, fvimp_brmsdf,
+                         cores=4,
+                         iter = (10^4),
+                         chains = 4,
+                         thin=1,
+                         init=0,
+                         control = list(adapt_delta = 0.999,
+                                        stepsize = 0.001,
+                                        max_treedepth = 20),
+                         data2 = list(studycov = studycov))
+
+write.ms.table(fit.par.impatiens, "ImpatiensPar750m_32610")
+save(fit.par.impatiens, fvimp_brmsdf, orig.spec,
+     file="saved/ImpatiensPar750m_32610.Rdata")
+load(file="saved/ImpatiensPar750m_32610.Rdata")
+
+# Some quick model checks
+summary(fit.par.impatiens)
+bayes_R2(fit.par.impatiens)
+plot(pp_check(fit.par.impatiens, resp = "hascrithidia"))
+plot(pp_check(fit.par.impatiens, resp = "apicystis"))
+
 
 
 ## **********************************************************
