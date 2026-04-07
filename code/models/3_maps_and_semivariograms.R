@@ -9,95 +9,12 @@ source("code/src/makeMapGrids.R")
 source("code/src/getPhyloMatrix.R")
 
 # load r data
-load(file="saved/AllModels_fv.Rdata")
+fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
+load(file="saved/Base500m_32610.Rdata")
+load(file="saved/NativePar500m_32610.Rdata")
+load(file="saved/ImpatiensPar500m_32610.Rdata")
 
-
-## ***********************************************************************
-## Plot distributions of landscape metrics
-## ***********************************************************************
-transects = orig.spec %>% 
-  group_by(sample_pt) %>%
-  sample_n(1)
-transect_metrics = transects[,colnames(transects) %in% c("sample_pt", "site", 
-                                                         "prop_blueberry_500", 
-                                                         "prop_edge_500", 
-                                                         "landscape_shdi_500", 
-                                                         "prop_blueberry_1000", 
-                                                         "prop_edge_1000", 
-                                                         "landscape_shdi_1000")]
-transect_metrics_long = transect_metrics %>% 
-  pivot_longer(-c("sample_pt", "site"),
-               names_to = "metric",
-               values_to = "values")
-
-split_parts = strsplit(transect_metrics_long$metric, "_")
-
-transect_metrics_long$prefix = sapply(split_parts, function(x) paste(head(x, -1), collapse = "_"))
-transect_metrics_long$scale = as.numeric(sapply(split_parts, tail, 1))
-
-plot_list = list()
-rows = c("landscape_shdi", "prop_blueberry", "prop_edge")
-columns = c(500, 1000)
-order = expand.grid(rows, columns)
-count = 1
-
-ylims <- list(
-  prop_blueberry = c(0, 1),
-  prop_edge      = c(0, 0.3),
-  landscape_shdi = c(0, 2.5)
-)
-
-for (r in rows){
-  for (c in columns){
-    if(c == 500){
-      if(r == "prop_edge"){
-        ylab = "Edge density"
-      } else if(r == "prop_blueberry"){
-        ylab = "Proportion blueberry"
-      } else if(r== "landscape_shdi"){
-        ylab = "Shannon diversity"
-      }
-    } else{ylab = ""}
-    
-    if(r == "prop_edge"){
-      xlab = "Site"
-    } else{xlab = ""}
-    
-    plot_list[[count]] = ggplot(transect_metrics_long[transect_metrics_long$prefix == r &
-                                                        transect_metrics_long$scale == c,], 
-                                aes(x = site, y = values)) +
-      geom_violin() +
-      ylim(ylims[[r]]) +
-      ylab(ylab) +
-      xlab(xlab) +
-      theme_minimal()
-    count = count + 1
-  }
-}
-
-header1 = ggplot() + theme_void() + ggtitle("500 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
-header2 = ggplot() + theme_void() + ggtitle("1000 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
-blank = nullGrob()
-
-final = grid.arrange(blank, header1, blank, header2, 
-  blank, plot_list[[1]], blank, plot_list[[2]],
-  blank, blank, blank, blank,
-  blank, plot_list[[3]], blank, plot_list[[4]],
-  blank, blank, blank, blank,
-  blank, plot_list[[5]], blank, plot_list[[6]],
-  ncol = 4,
-  heights = c(0.15, 1, 0.1, 1, 0.1, 1), widths = c(0.1, 1, 0.1, 1))
-site_grid = ggdraw() +
-  draw_plot(final, 0.01, 0, 1, 1) +
-  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)"), 
-                  x = c(0, 0.52, 0, 0.52, 0, 0.52), 
-                  y = c(0.98, 0.98, 0.66, 0.66, 0.33, 0.33))
-
-ggsave("figures/manuscript_figures/landscape_metric_dist.jpg", site_grid,
-       units = "px", height = 1500, width = 2500)
   
-
-
 ## ***********************************************************************
 ## make map plots
 ## ***********************************************************************
@@ -164,37 +81,22 @@ ggsave(filename = "figures/manuscript_figures/parasitemap.jpg",
 ## Variograms testing for spatial autocorrelation
 ## ***********************************************************************
 fvimp_sub = filter(fvimp_brmsdf, impSubset == TRUE)
-fvimp_subpar = filter(fvimp_brmsdf, apidae ==1)
+fvimp_par = filter(fvimp_brmsdf, subsetImpPar ==1)
+fvnative_par = filter(fvimp_brmsdf, subsetNativePar ==1)
 studyspecies = c("Bombus_mixtus", "Bombus_flavifrons", "Bombus_rufocinctus", "Bombus_californicus", 
                  "Bombus_impatiens", "Bombus_vosnesenskii", "Bombus_sitkensis", "Bombus_melanopygus", 
                  "Bombus_nevadensis", "Bombus_medius")
 studycov = getPhyloMatrix(studyspecies)
 
 runSVmodels = function(fvimp_sub,
-                       fvimp_subpar,
+                       fvimp_par,
+                       fvnative_par,
                        studycov){
-#calculate residuals for bombus richness (no predictors)
-brich <- brm(
-  bf(bombus_richness | trials(9) ~ 1),
-  data = fvimp_sub,
-  family = beta_binomial(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-brich_resid = as.data.frame(residuals(brich))
-fvimp_sub$brich_resid_nopred = brich_resid$Estimate
-
 #calculate residuals for bombus richness (with predictors)
 brich <- brm(
   bf(bombus_richness | trials(9) ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
        (1|sample_pt)),
   data = fvimp_sub,
   family = beta_binomial(),
@@ -210,28 +112,11 @@ brich <- brm(
 brich_resid = as.data.frame(residuals(brich))
 fvimp_sub$brich_resid_pred = brich_resid$Estimate
 
-#calculate residuals for wild bee abundance (no predictors)
-babun <- brm(
-  bf(native_bee_abundance ~ 1),
-  data = fvimp_sub,
-  family = negbinomial(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-babun_resid = as.data.frame(residuals(babun))
-fvimp_sub$babun_resid_nopred = babun_resid$Estimate
-
 #calculate residuals for wild bee abundance (with predictors)
 babun <- brm(
   bf(native_bee_abundance ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
        (1|sample_pt)),
   data = fvimp_sub,
   family = negbinomial(),
@@ -247,28 +132,11 @@ babun <- brm(
 babun_resid = as.data.frame(residuals(babun))
 fvimp_sub$babun_resid_pred = babun_resid$Estimate
 
-#calculate residuals for impatiens abundance (no predictors)
-iabun <- brm(
-  bf(impatiens_abundance ~ 1),
-  data = fvimp_sub,
-  family = negbinomial(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-iabun_resid = as.data.frame(residuals(iabun))
-fvimp_sub$iabun_resid_nopred = iabun_resid$Estimate
-
 #calculate residuals for impatiens abundance (with predictors)
 iabun <- brm(
   bf(impatiens_abundance ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
        (1|sample_pt)),
   data = fvimp_sub,
   family = negbinomial(),
@@ -289,31 +157,14 @@ fvimp_sub$iabun_resid_pred = iabun_resid$Estimate
 ### now parasite models
 ########################################
 
-#calculate residuals for crithidia prevalence (no predictors)
-hascrith <- brm(
-  bf(hascrithidia ~ 1),
-  data = fvimp_subpar,
-  family = bernoulli(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-crith_resid <- as.data.frame(residuals(hascrith))
-fvimp_subpar$crith_resid_nopred = crith_resid$Estimate
-
 #calculate residuals for crithidia prevalence (with predictors)
 hascrith <- brm(
   bf(hascrithidia ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + caste +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
-  data = fvimp_subpar,
+  data = fvnative_par,
   family = bernoulli(),
   chains = 4,
   thin = 1,
@@ -326,33 +177,16 @@ hascrith <- brm(
   iter = (10^4),
   data2 = list(studycov = studycov))
 crith_resid <- as.data.frame(residuals(hascrith))
-fvimp_subpar$crith_resid_pred = crith_resid$Estimate
-
-#calculate residuals for apicystis prevalence (no predictors)
-hasapi <- brm(
-  bf(apicystis ~ 1 ),
-  data = fvimp_subpar,
-  family = bernoulli(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-api_resid <- as.data.frame(residuals(hasapi))
-fvimp_subpar$api_resid_nopred = api_resid$Estimate
+fvnative_par$crith_resid_pred = crith_resid$Estimate
 
 #calculate residuals for apicystis prevalence (with predictors)
 hasapi <- brm(
   bf(apicystis ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + caste +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
-  data = fvimp_subpar,
+  data = fvnative_par,
   family = bernoulli(),
   chains = 4,
   thin = 1,
@@ -365,33 +199,16 @@ hasapi <- brm(
   iter = (10^4),
   data2 = list(studycov = studycov))
 api_resid <- as.data.frame(residuals(hasapi))
-fvimp_subpar$api_resid_pred = api_resid$Estimate
-
-#calculate residuals for nosema prevalence (no predictors)
-hasnos <- brm(
-  bf(hasnosema ~ 1 ),
-  data = fvimp_subpar,
-  family = bernoulli(),
-  chains = 4,
-  thin = 1,
-  init = 0,
-  cores = 4,
-  open_progress = FALSE,
-  control = list(adapt_delta = 0.999,
-                 stepsize = 0.001,
-                 max_treedepth = 20),
-  iter = (10^4))
-nos_resid <- as.data.frame(residuals(hasnos))
-fvimp_subpar$nos_resid_nopred = nos_resid$Estimate
+fvnative_par$api_resid_pred = api_resid$Estimate
 
 #calculate residuals for nosema prevalence (with predictors)
 hasnos <- brm(
   bf(hasnosema ~ julian_date + I(julian_date^2) + 
        floral_abundance + floral_diversity +
-       prop_blueberry + prop_edge + landscape_shdi +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + caste +
        native_bee_abundance + impatiens_abundance + bombus_richness +
        (1|sample_pt) + (1|subsite) + (1|gr(final_id, cov = studycov))),
-  data = fvimp_subpar,
+  data = fvnative_par,
   family = bernoulli(),
   chains = 4,
   thin = 1,
@@ -404,17 +221,63 @@ hasnos <- brm(
   iter = (10^4),
   data2 = list(studycov = studycov))
 nos_resid <- as.data.frame(residuals(hasnos))
-fvimp_subpar$nos_resid_pred = nos_resid$Estimate
+fvnative_par$nos_resid_pred = nos_resid$Estimate
 
 
-return(list(fvimp_sub, fvimp_subpar))}
+#calculate residuals for crithidia prevalence (with predictors)
+hascrith <- brm(
+  bf(hascrithidia ~ julian_date + I(julian_date^2) + 
+       floral_abundance + floral_diversity +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
+       native_bee_abundance + impatiens_abundance + bombus_richness +
+       (1|sample_pt) + (1|subsite)),
+  data = fvimp_par,
+  family = bernoulli(),
+  chains = 4,
+  thin = 1,
+  init = 0,
+  cores = 4,
+  open_progress = FALSE,
+  control = list(adapt_delta = 0.999,
+                 stepsize = 0.001,
+                 max_treedepth = 20),
+  iter = (10^4),
+  data2 = list(studycov = studycov))
+crith_resid <- as.data.frame(residuals(hascrith))
+fvimp_par$crith_resid_pred = crith_resid$Estimate
+
+#calculate residuals for apicystis prevalence (with predictors)
+hasapi <- brm(
+  bf(apicystis ~ julian_date + I(julian_date^2) + 
+       floral_abundance + floral_diversity +
+       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 +
+       native_bee_abundance + impatiens_abundance + bombus_richness +
+       (1|sample_pt) + (1|subsite)),
+  data = fvimp_par,
+  family = bernoulli(),
+  chains = 4,
+  thin = 1,
+  init = 0,
+  cores = 4,
+  open_progress = FALSE,
+  control = list(adapt_delta = 0.999,
+                 stepsize = 0.001,
+                 max_treedepth = 20),
+  iter = (10^4),
+  data2 = list(studycov = studycov))
+api_resid <- as.data.frame(residuals(hasapi))
+fvimp_par$api_resid_pred = api_resid$Estimate
+
+
+return(list(fvimp_sub, fvimp_par, fvnative_par))}
 
 #only run this code if models have changed -- otherwise load from .Rdata file
-# dfs = runSVmodels(fvimp_sub = fvimp_sub,
-#                   fvimp_subpar = fvimp_subpar,
-#                   studycov = studycov)
-# fvimp_sub_withresid = dfs[[1]]
-# fvimp_subpar_withresid = dfs[[2]]
+dfs = runSVmodels(fvimp_sub = fvimp_sub,
+                  fvnative_par = fvnative_par,
+                  fvimp_par = fvimp_subpar,
+                  studycov = studycov)
+fvimp_sub_withresid = dfs[[1]]
+fvimp_subpar_withresid = dfs[[2]]
 
 #############################################
 ### save dataframe 

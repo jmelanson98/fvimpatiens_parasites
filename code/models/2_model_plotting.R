@@ -10,6 +10,7 @@ source("code/src/misc.R")
 source("code/src/posterior_manip.R")
 
 ## load model results and data
+fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 load(file="saved/Base500m_32610.Rdata")
 load(file="saved/NativePar500m_32610.Rdata")
 load(file="saved/ImpatiensPar500m_32610.Rdata")
