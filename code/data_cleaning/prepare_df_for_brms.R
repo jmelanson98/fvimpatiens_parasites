@@ -71,7 +71,7 @@ specimenTable = prepSpecimenTable(specimenData, parasiteScores)
 landscapeMetrics = calculateLandscapeMetrics(landcover.raster = landscape1, 
                                              site.shapefile = fv_points2022, 
                                              landcover.classification = landcover,
-                                             buffer.sizes = c(250, 500, 750))
+                                             buffer.sizes = c(250, 500, 750, 1000))
 write.csv(landscapeMetrics, "data/landscapemetrics_32610.csv")
 
 #OR

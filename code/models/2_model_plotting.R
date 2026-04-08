@@ -3,14 +3,13 @@
 
 setwd('/Users/jenna1/Documents/UBC/bombus_project/fvimpatiens_parasites')
 rm(list=ls())
-library(marginalmeans)
+library(marginaleffects)
 source("code/src/ggplotThemes.R")
 source("code/src/init.R")
 source("code/src/misc.R")
 source("code/src/posterior_manip.R")
 
 ## load model results and data
-fvimp_brmsdf <- read.csv("data/fvimp_brmsdf.csv", sep = ",", header = T, row.names = 1)
 load(file="saved/Base500m_32610.Rdata")
 load(file="saved/NativePar500m_32610.Rdata")
 load(file="saved/ImpatiensPar500m_32610.Rdata")
@@ -22,7 +21,7 @@ native.cond.effects <- conditional_effects(fit.par.native)
 impatiens.cond.effects <- conditional_effects(fit.par.impatiens)
 
 save(base.cond.effects, native.cond.effects, impatiens.cond.effects,
-file="saved/conditional_effects_32610.Rdata")
+     file="saved/conditional_effects_32610.Rdata")
 load(file="saved/conditional_effects_32610.Rdata")
 
 # load landscape metrics
@@ -35,25 +34,25 @@ new.net = fvimp_brmsdf[fvimp_brmsdf$Subset == TRUE, ]
 new.orig = orig.spec[fvimp_brmsdf$Subset == TRUE, ]
 
 #create axis values for standardized variables
-labs.doy = (pretty(new.orig$julian_date, n=8))
+labs.doy = (pretty(new.orig$julian_date, n=6))
 axis.doy =  standardize.axis(labs.doy,
-                              new.orig$julian_date)
+                             new.orig$julian_date)
 
-labs.fdiv = (pretty(new.orig$floral_diversity, n=8))
+labs.fdiv = (pretty(new.orig$floral_diversity, n=6))
 axis.fdiv =  standardize.axis(labs.fdiv,
                               new.orig$floral_diversity)
 
-labs.fabun = (pretty(new.orig$floral_abundance, n=8))
+labs.fabun = (pretty(new.orig$floral_abundance, n=6))
 axis.fabun =  standardize.axis(labs.fabun,
                                new.orig$floral_abundance)
 
-labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=9))
+labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=6))
 axis.blueberry =  standardize.axis(labs.blueberry,
-                                    new.orig$prop_blueberry_500)
+                                   new.orig$prop_blueberry_500)
 
-labs.edge = (pretty(new.orig$prop_edge_500, n=8))
+labs.edge = (pretty(new.orig$prop_edge_500, n=6))
 axis.edge =  standardize.axis(labs.edge,
-                               new.orig$prop_edge_500)
+                              new.orig$prop_edge_500)
 
 
 ## ***********************************************************************
@@ -135,18 +134,18 @@ babun.bberry =
   theme(axis.title.x = element_text(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16)) +
-#plot model prediction with credible interval
+  #plot model prediction with credible interval
   geom_line(data = babun, aes(x = prop_blueberry_500, y=estimate__)) +
   geom_ribbon(data = babun, aes(ymin = lower__, ymax = upper__,
-                  alpha=0.5), fill = "red")
+                                alpha=0.5), fill = "red")
 babun.bberry
 
 # AME for 10% increase in blueberry area
 bb_sd = sd(new.orig$prop_blueberry_500, na.rm = TRUE)
 bb_babun_ame = avg_comparisons(fit.bombus.base, 
-                                   resp = "nativebeeabundance",
-                                   variables = list(prop_blueberry_500 = c(0, 0.1/bb_sd)),
-                                   newdata = subset_data)
+                               resp = "nativebeeabundance",
+                               variables = list(prop_blueberry_500 = c(0, 0.1/bb_sd)),
+                               newdata = subset_data)
 bb_babun_ame
 
 ## ***********************************************************************
@@ -206,25 +205,25 @@ new.net = fvimp_brmsdf[fvimp_brmsdf$impSubset == TRUE, ]
 new.orig = orig.spec[fvimp_brmsdf$impSubset == TRUE, ]
 
 #create axis values for standardized variables
-labs.doy = (pretty(new.orig$julian_date, n=8))
+labs.doy = (pretty(new.orig$julian_date, n=6))
 axis.doy =  standardize.axis(labs.doy,
-                              new.orig$julian_date)
+                             new.orig$julian_date)
 
-labs.fdiv = (pretty(new.orig$floral_diversity, n=8))
+labs.fdiv = (pretty(new.orig$floral_diversity, n=6))
 axis.fdiv =  standardize.axis(labs.fdiv,
-                               new.orig$floral_diversity)
+                              new.orig$floral_diversity)
 
-labs.fabun = (pretty(new.orig$floral_abundance, n=8))
+labs.fabun = (pretty(new.orig$floral_abundance, n=6))
 axis.fabun =  standardize.axis(labs.fabun,
-                                new.orig$floral_abundance)
+                               new.orig$floral_abundance)
 
-labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=9))
+labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=6))
 axis.blueberry =  standardize.axis(labs.blueberry,
-                                    new.orig$prop_blueberry_500)
+                                   new.orig$prop_blueberry_500)
 
-labs.edge = (pretty(new.orig$prop_edge_500, n=8))
+labs.edge = (pretty(new.orig$prop_edge_500, n=6))
 axis.edge =  standardize.axis(labs.edge,
-                               new.orig$prop_edge_500)
+                              new.orig$prop_edge_500)
 
 ## ***********************************************************************
 ## bombus richness ~ floral abundance (Fig 3i)
@@ -294,9 +293,9 @@ brich.fdiv
 new_data = insight::get_data(fit.bombus.base)
 subset_data = new_data[new_data$impSubset == TRUE,]
 fdiv_brich_ame = avg_comparisons(fit.bombus.base, 
-                                   resp = "bombusrichness",
-                                   variables = list(floral_diversity = c(0, 1)),
-                                   newdata = subset_data)
+                                 resp = "bombusrichness",
+                                 variables = list(floral_diversity = c(0, 1)),
+                                 newdata = subset_data)
 
 ## ***********************************************************************
 ## bombus richness ~ proportion blueberry (Figure 3k)
@@ -378,7 +377,7 @@ brich.doy =
   #plot model prediction with credible interval
   geom_line(data = brich, aes(x = julian_date, y=estimate__)) +
   geom_ribbon(data = brich, aes(ymin = lower__, ymax = upper__,
-                               alpha=0.5), fill = "red")
+                                alpha=0.5), fill = "red")
 
 brich.doy
 
@@ -406,14 +405,14 @@ iabund.fabund =
   #plot model prediction with credible interval
   geom_line(data = iabund, aes(x = floral_abundance, y=estimate__)) +
   geom_ribbon(data = iabund, aes(ymin = lower__, ymax = upper__,
-                               alpha=0.5), fill = "red") 
+                                 alpha=0.5), fill = "red") 
 
 iabund.fabund
 
 ## ***********************************************************************
 ## impatiens abundance ~ floral diversity (figure 3f)
 ## ***********************************************************************
-iabund = all.cond.effects[["impatiensabundance.impatiensabundance_floral_diversity"]]
+iabund = base.cond.effects[["impatiensabundance.impatiensabundance_floral_diversity"]]
 
 #ggplot
 iabund.fdiv <- 
@@ -616,7 +615,7 @@ hascrith.brich =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hascrithnative, aes(x = bombus_richness, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
-
+  
   
   # labels
   labs(x = "", y = "") +
@@ -647,7 +646,7 @@ hascrith.bberry =
               alpha = 0.4, fill = "plum") +
   geom_line(data = hascrithnative, aes(x = prop_blueberry_500, y=estimate__), 
             color = "darkorchid4") +
-
+  
   
   # labels
   labs(x = "", y = "*Crithidia spp.* prevalence") +
@@ -951,7 +950,7 @@ hasnosema.bberry =
             color = "darkorchid4", linetype = "dashed") +
   
   # labels
-  labs(x = "Proportion blueberry (500m)", y = "*Vairimorpha spp.* prevalence") +
+  labs(x = "Proportion blueberry", y = "*Vairimorpha spp.* prevalence") +
   scale_x_continuous(breaks = axis.blueberry,
                      labels =  labs.blueberry) +
   theme_ms() +
@@ -1016,7 +1015,7 @@ casteplot = ggplot(allpar, aes(x = parname, y = estimate__, color = caste)) +
   geom_point(position = position_dodge(width = 0.3)) +
   geom_errorbar(aes(ymin = lower__, ymax = upper__), width = 0.2, 
                 position = position_dodge(width = 0.3)) +
-  scale_colour_discrete(palette = c("darkorchid4", "plum")) +
+  scale_colour_manual(values = c("darkorchid4", "plum")) +
   labs(x = "", y = "Parasite Prevalence",
        color = "Caste") +
   scale_x_discrete(labels = 
@@ -1063,30 +1062,30 @@ ggsave(filename = "figures/manuscript_figures/bombusgrid.jpg",
        height = 3500, 
        units = "px")
 
-#FIGURE FOR BLUEBERRY RESEARCH DAY
-partialbombusgrid = grid.arrange(babun.fabun, babun.bberry, babun.edge,
-                          brich.fabund, brich.bberry, brich.edge,
-                          ncol = 3)
-
-#export and save
-ggsave(filename = "figures/bcberry.jpg", 
-       plot = partialbombusgrid, 
-       width = 3000, 
-       height = 3000, 
-       units = "px")
-
-
-#FIGURE FOR PBESA SLIDES
-partialbombusgrid2 = grid.arrange(babun.bberry, brich.bberry, iabund.bberry,
-                                  babun.edge, brich.edge, iabund.edge,
-                                  ncol = 3)
-
-#export and save
-ggsave(filename = "figures/pbesa.jpg", 
-       plot = partialbombusgrid2, 
-       width = 3000, 
-       height = 2000, 
-       units = "px")
+# #FIGURE FOR BLUEBERRY RESEARCH DAY
+# partialbombusgrid = grid.arrange(babun.fabun, babun.bberry, babun.edge,
+#                           brich.fabund, brich.bberry, brich.edge,
+#                           ncol = 3)
+# 
+# #export and save
+# ggsave(filename = "figures/bcberry.jpg", 
+#        plot = partialbombusgrid, 
+#        width = 3000, 
+#        height = 3000, 
+#        units = "px")
+# 
+# 
+# #FIGURE FOR PBESA SLIDES
+# partialbombusgrid2 = grid.arrange(babun.bberry, brich.bberry, iabund.bberry,
+#                                   babun.edge, brich.edge, iabund.edge,
+#                                   ncol = 3)
+# 
+# #export and save
+# ggsave(filename = "figures/pbesa.jpg", 
+#        plot = partialbombusgrid2, 
+#        width = 3000, 
+#        height = 2000, 
+#        units = "px")
 
 
 
@@ -1114,14 +1113,14 @@ parasitegrid = grid.arrange(hascrith.bberry, hascrith.imp, hascrith.brich, hascr
                             ncol = 4)
 #add labels
 parasitegrid <- ggdraw() +
-  draw_plot(parasitegrid, 0.015, 0, 1, 1) +
+  draw_plot(parasitegrid, 0, 0, 1, 1) +
   draw_plot_label(c("(A)", "(D)", "(G)", "(J)", "(B)", "(E)", "(H)", "(K)", "(C)", "(F)", "(I)", "(L)"), 
                   x = c(0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75), 
-                  y = c(1, 1, 1, 1, 0.66, 0.66, 0.66, 0.66, 0.33, 0.33, 0.33, 0.33))
+                  y = c(1, 1, 1, 1, 0.66, 0.66, 0.66, 0.66, 0.34, 0.34, 0.34, 0.34))
 
 #export and save
 ggsave(filename = "figures/manuscript_figures/parasitegrid.jpg", 
-       plot = bombusgrid, 
+       plot = parasitegrid, 
        width = 4000, 
        height = 3500, 
        units = "px")
@@ -1136,7 +1135,7 @@ parasitedoy <- ggdraw() +
   draw_plot_label(c("(A)", "(B)", "(C)"), 
                   x = c(0, 0.33, 0.66), 
                   y = c(1, 1, 1))
-                  #y = c(0.97, 0.73, 0.48)) #if there's a legend
+#y = c(0.97, 0.73, 0.48)) #if there's a legend
 #save and export
 ggsave(filename = "figures/manuscript_figures/parasitedoy.jpg", 
        plot = parasitedoy, 
@@ -1203,3 +1202,87 @@ ggsave("figures/manuscript_figures/landscapemetrics.jpg",
        landscapeplots,
        height = 3000, width = 1500,
        units = "px")
+
+
+
+## ***********************************************************************
+## Plot distributions of landscape metrics
+## ***********************************************************************
+transect_metrics = landscapemetrics[,colnames(landscapemetrics) %in% c("sample_pt", "site", 
+                                                         "prop_blueberry_500", 
+                                                         "prop_edge_500", 
+                                                         "landscape_shdi_500", 
+                                                         "prop_blueberry_1000", 
+                                                         "prop_edge_1000", 
+                                                         "landscape_shdi_1000")]
+transect_metrics$site = gsub("^([A-Za-z]{1,2})[0-9].*", "\\1", transect_metrics$sample_pt)
+transect_metrics_long = transect_metrics %>% 
+  pivot_longer(-c("sample_pt", "site"),
+               names_to = "metric",
+               values_to = "values")
+
+split_parts = strsplit(transect_metrics_long$metric, "_")
+
+transect_metrics_long$prefix = sapply(split_parts, function(x) paste(head(x, -1), collapse = "_"))
+transect_metrics_long$scale = as.numeric(sapply(split_parts, tail, 1))
+
+plot_list = list()
+rows = c("landscape_shdi", "prop_blueberry", "prop_edge")
+columns = c(500, 1000)
+order = expand.grid(rows, columns)
+count = 1
+
+ylims <- list(
+  prop_blueberry = c(0, 0.9),
+  prop_edge      = c(0, 0.2),
+  landscape_shdi = c(0, 2.5)
+)
+
+for (r in rows){
+  for (c in columns){
+    if(c == 500){
+      if(r == "prop_edge"){
+        ylab = "Edge density"
+      } else if(r == "prop_blueberry"){
+        ylab = "Proportion blueberry"
+      } else if(r== "landscape_shdi"){
+        ylab = "Shannon diversity"
+      }
+    } else{ylab = ""}
+    
+    if(r == "prop_edge"){
+      xlab = "Site"
+    } else{xlab = ""}
+    
+    plot_list[[count]] = ggplot(transect_metrics_long[transect_metrics_long$prefix == r &
+                                                        transect_metrics_long$scale == c,], 
+                                aes(x = site, y = values)) +
+      geom_violin() +
+      ylim(ylims[[r]]) +
+      ylab(ylab) +
+      xlab(xlab) +
+      theme_minimal()
+    count = count + 1
+  }
+}
+
+header1 = ggplot() + theme_void() + ggtitle("500 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+header2 = ggplot() + theme_void() + ggtitle("1000 meter buffer") + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+blank = nullGrob()
+
+final = grid.arrange(blank, header1, blank, header2, 
+                     blank, plot_list[[1]], blank, plot_list[[2]],
+                     blank, blank, blank, blank,
+                     blank, plot_list[[3]], blank, plot_list[[4]],
+                     blank, blank, blank, blank,
+                     blank, plot_list[[5]], blank, plot_list[[6]],
+                     ncol = 4,
+                     heights = c(0.15, 1, 0.1, 1, 0.1, 1), widths = c(0.1, 1, 0.1, 1))
+site_grid = ggdraw() +
+  draw_plot(final, 0.01, 0, 1, 1) +
+  draw_plot_label(c("(A)", "(B)", "(C)", "(D)", "(E)", "(F)"), 
+                  x = c(0, 0.52, 0, 0.52, 0, 0.52), 
+                  y = c(0.98, 0.98, 0.66, 0.66, 0.33, 0.33))
+
+ggsave("figures/manuscript_figures/landscape_metrics.jpg", site_grid,
+       units = "px", height = 1500, width = 2500)

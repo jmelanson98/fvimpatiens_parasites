@@ -133,3 +133,62 @@ pstars2 <- function(p) {
   if (p < 0.05) return("*")
   return("ns")
 }
+
+
+
+morans_to_latex = function(
+    results_list,
+    digits = 3,
+    caption = "Moran's I test results",
+    label = "tab:morans",
+    file
+) {
+  rows = lapply(names(results_list), function(model_name) {
+    entry = results_list[[model_name]]
+    test = entry$test
+    scale = entry$scale
+    data.frame(
+      Model = model_name,
+      U = formatC(test$estimate["Moran I statistic"], format = "e", digits = 3),
+      E = formatC(test$estimate["Expectation"], format = "e", digits = 3),
+      V = formatC(test$estimate["Variance"], format = "e", digits = 3),
+      p = formatC(test$p.value, format = "e", digits = 3),
+      stringsAsFactors = FALSE
+    )
+  })
+  df = do.call(rbind, rows)
+  
+  col_spec = paste0("@{} l l *{", ncol(df) - 2, "}{r} @{}")
+  
+  header = c(
+    "Model (Spatial Scale)",
+    "Moran's $I$",
+    "$\\text{E}[I]$",
+    "Variance",
+    "$p$-value"
+  )
+  
+  data_rows = apply(df, 1, function(row) paste(row, collapse = " & "))
+  data_rows = paste(data_rows, "\\\\")
+  
+  lines = c(
+    "\\begin{table}[ht]",
+    "\\centering",
+    paste0("\\caption{", caption, "}"),
+    paste0("\\label{", label, "}"),
+    "\\resizebox{\\linewidth}{!}{%",
+    paste0("\\begin{tabular}{", col_spec, "}"),
+    "\\toprule",
+    paste(paste(header, collapse = " & "), "\\\\"),
+    "\\midrule",
+    data_rows,
+    "\\bottomrule",
+    "\\end{tabular}%",
+    "}",
+    "\\end{table}"
+  )
+  
+  tex = paste(lines, collapse = "\n")
+  writeLines(tex, con = file)
+  invisible(tex)
+}

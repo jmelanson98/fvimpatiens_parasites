@@ -607,34 +607,52 @@ plot(pp_check(fit.par.impatiens, resp = "apicystis"))
 ## **********************************************************
 ## Model Checks with DHARMa
 ## **********************************************************
-check_brms <- function(model,             # brms model
-                       integer = TRUE,   # integer response? (TRUE/FALSE)
-                       plot = TRUE,       # make plot?
-                       ...                # further arguments for DHARMa::plotResiduals
+check_brms <- function(model,
+                       response = NULL,   # response variable name (string) for multivariate models
+                       integer = TRUE,
+                       plot = TRUE,
+                       ...
 ) {
   mdata <- brms::standata(model)
-  if (!"Y" %in% names(mdata))
-    stop("Cannot extract the required information from this brms model")
+  
+  # Handle multivariate models
+  if (!is.null(response)) {
+    y_name <- paste0("Y_", response)
+    if (!y_name %in% names(mdata))
+      stop(paste("Cannot find response variable:", y_name, "\nAvailable:", 
+                 paste(grep("^Y_", names(mdata), value=TRUE), collapse=", ")))
+    y_obs <- mdata[[y_name]]
+  } else {
+    if (!"Y" %in% names(mdata))
+      stop("Cannot extract the required information from this brms model")
+    y_obs <- mdata$Y
+  }
+  
   dharma.obj <- DHARMa::createDHARMa(
-    simulatedResponse = t(brms::posterior_predict(model, ndraws = 1000)),
-    observedResponse = mdata$Y,
+    simulatedResponse = t(brms::posterior_predict(model, ndraws = 1000, resp = response)),
+    observedResponse = y_obs,
     fittedPredictedResponse = apply(
-      t(brms::posterior_epred(model, ndraws = 1000, re.form = NA)),
+      t(brms::posterior_epred(model, ndraws = 1000, re.form = NA, resp = response)),
       1,
       mean),
     integerResponse = integer)
+  
   if (isTRUE(plot)) {
     plot(dharma.obj, ...)
   }
   invisible(dharma.obj)
 }
 
-checked.crith.base <- check_brms(fit.bombus.crith)
-checked.nos.base <- check_brms(fit.bombus.nos)
-checked.api.base <- check_brms(fit.bombus.api.inter)
-checked.brich <- check_brms(fit.brich)
-checked.babund <- check_brms(fit.babund)
-checked.iabund <- check_brms(fit.iabund)
+checked.crith.native <- check_brms(fit.par.native, response = "hascrithidia")
+checked.api.native <- check_brms(fit.par.native, response = "apicystis")
+checked.nos.native <- check_brms(fit.par.native, response = "hasnosema")
+
+checked.crith.impatiens <- check_brms(fit.par.impatiens, response = "hascrithidia")
+checked.api.impatiens <- check_brms(fit.par.impatiens, response = "apicystis")
+
+checked.brich <- check_brms(fit.bombus.base, response = "bombusrichness")
+checked.babund <- check_brms(fit.bombus.base, response = "nativebeeabundance")
+checked.iabund <- check_brms(fit.bombus.base, response = "impatiensabundance")
 
 testZeroInflation(checked.babund)
 testQuantiles(checked.babund)
@@ -642,36 +660,93 @@ testQuantiles(checked.babund)
 
 
 ## **********************************************************
-## Model Comparisons
+## Check multicollinearity
 ## **********************************************************
-#comparison of simple vs two-way interaction models
-loo_crith = loo::loo(
-  fit.bombus.par,
-  fit.bombus.par.inter,
-  compare = TRUE,
-  resp = "hascrithidia",
-  pointwise = FALSE,
-  k_threshold = 0.7,
-  model_names = NULL
-)
 
-loo_apicystis = loo::loo(
-  fit.bombus.par,
-  fit.bombus.par.inter,
-  compare = TRUE,
-  resp = "apicystis",
-  pointwise = FALSE,
-  k_threshold = 0.7,
-  model_names = NULL
-)
+library(glmmTMB)
+library(performance)
 
-crith_diff = as.data.frame(loo_crith$diffs)
-crith_diff$parasite = "crithidia"
-api_diff = as.data.frame(loo_apicystis$diffs)
-api_diff$parasite = "apicystis"
-loo_df = rbind(crith_diff, api_diff)
+vif_model = glmmTMB(cbind(bombus_richness, 9 - bombus_richness) ~ 
+                       floral_abundance + floral_diversity +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt),
+                     data = fvimp_sub,
+                     family = betabinomial(link = "logit"))
 
-write.csv(loo_df, "saved/tables/two_way_loo.csv")
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(native_bee_abundance ~ 
+                       floral_abundance + floral_diversity +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt),
+                     data = fvimp_sub,
+                     family = nbinom2)
+
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(impatiens_abundance ~ 
+                       floral_abundance + floral_diversity +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt),
+                     data = fvimp_sub,
+                     family = nbinom2)
+
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(hascrithidia ~ 
+                       floral_abundance + floral_diversity +
+                       native_bee_abundance + impatiens_abundance + bombus_richness +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt) + (1|subsite) + (1|final_id),
+                     data = fvnative_par,
+                     family = binomial)
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(apicystis ~ 
+                       floral_abundance + floral_diversity +
+                       native_bee_abundance + impatiens_abundance + bombus_richness +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt) + (1|subsite) + (1|final_id),
+                     data = fvnative_par,
+                     family = binomial)
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(hasnosema ~ 
+                       floral_abundance + floral_diversity +
+                       native_bee_abundance + impatiens_abundance + bombus_richness +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt) + (1|subsite) + (1|final_id),
+                     data = fvnative_par,
+                     family = binomial)
+check_collinearity(vif_model)
+
+
+
+vif_model <- glmmTMB(hascrithidia ~ 
+                       floral_abundance + floral_diversity +
+                       native_bee_abundance + impatiens_abundance + bombus_richness +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt) + (1|subsite),
+                     data = fvimp_par,
+                     family = binomial)
+check_collinearity(vif_model)
+
+vif_model <- glmmTMB(apicystis ~ 
+                       floral_abundance + floral_diversity +
+                       native_bee_abundance + impatiens_abundance + bombus_richness +
+                       prop_blueberry_500 + prop_edge_500 + landscape_shdi_500 + 
+                       julian_date + I(julian_date^2) +
+                       (1|sample_pt) + (1|subsite),
+                     data = fvimp_par,
+                     family = binomial)
+check_collinearity(vif_model)
 
 ## **********************************************************
 ## Models for pairwise comparison of parasitism between species
