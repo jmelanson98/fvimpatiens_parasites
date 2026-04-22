@@ -554,10 +554,10 @@ hascrith.imp =
   
   # labels
   labs(x = "", y = "") +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(limits = c(-0.5,11)) +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -588,9 +588,9 @@ hascrith.doy =
   labs(x = "Julian date", y = "*Crithidia spp.* prevalence") +
   scale_x_continuous(breaks = axis.doy,
                      labels =  labs.doy) +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -619,9 +619,9 @@ hascrith.brich =
   
   # labels
   labs(x = "", y = "") +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -652,9 +652,9 @@ hascrith.bberry =
   labs(x = "", y = "*Crithidia spp.* prevalence") +
   scale_x_continuous(breaks = axis.blueberry,
                      labels =  labs.blueberry) +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -685,9 +685,9 @@ hascrith.fdiv =
   labs(x = "", y = "") +
   scale_x_continuous(breaks = axis.fdiv,
                      labels =  labs.fdiv) +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -714,13 +714,13 @@ apicystis.imp =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = apicystisnative, aes(x = impatiens_abundance, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(limits = c(-0.5,11)) +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -746,6 +746,7 @@ apicystis.doy =
               alpha = 0.4, fill = "plum") +
   geom_line(data = apicystisnative, aes(x = julian_date, y=estimate__), 
             color = "darkorchid4") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "Julian date", y = "*Apicystis spp.* prevalence") +
@@ -753,7 +754,6 @@ apicystis.doy =
                      labels =  labs.doy) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -778,12 +778,12 @@ apicystis.brich =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = apicystisnative, aes(x = bombus_richness, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -808,6 +808,7 @@ apicystis.bberry =
               alpha = 0.4, fill = "plum") +
   geom_line(data = apicystisnative, aes(x = prop_blueberry_500, y=estimate__), 
             color = "darkorchid4") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "", y = "*Apicystis spp.* prevalence") +
@@ -815,7 +816,6 @@ apicystis.bberry =
                      labels =  labs.blueberry) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -841,6 +841,7 @@ apicystis.fdiv =
               alpha = 0.4, fill = "plum") +
   geom_line(data = apicystisnative, aes(x = floral_diversity, y=estimate__), 
             color = "darkorchid4") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "", y = "") +
@@ -848,7 +849,6 @@ apicystis.fdiv =
                      labels =  labs.fdiv) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -869,13 +869,13 @@ hasnosema.imp =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hasnosemanative, aes(x = impatiens_abundance, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "*B. impatiens* abundance", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(limits = c(-0.5,11)) +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -896,6 +896,7 @@ hasnosema.doy =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hasnosemanative, aes(x = julian_date, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "Julian date", y = "*Vairimorpha spp.* prevalence") +
@@ -903,7 +904,6 @@ hasnosema.doy =
                      labels =  labs.doy) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -923,12 +923,12 @@ hasnosema.brich =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hasnosemanative, aes(x = bombus_richness, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "*Bombus* species richness", y = "") +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -948,14 +948,15 @@ hasnosema.bberry =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hasnosemanative, aes(x = prop_blueberry_500, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "Proportion blueberry", y = "*Vairimorpha spp.* prevalence") +
   scale_x_continuous(breaks = axis.blueberry,
                      labels =  labs.blueberry) +
+  ylim(c(0,1)) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
@@ -976,6 +977,7 @@ hasnosema.fdiv =
               alpha = 0.4, fill = "lightgrey") +
   geom_line(data = hasnosemanative, aes(x = floral_diversity, y=estimate__), 
             color = "darkorchid4", linetype = "dashed") +
+  ylim(c(0,1)) +
   
   # labels
   labs(x = "Floral diversity", y = "") +
@@ -983,7 +985,6 @@ hasnosema.fdiv =
                      labels =  labs.fdiv) +
   theme_ms() +
   theme(legend.position = "none") +
-  scale_y_continuous() +
   theme(axis.title.x = ggtext::element_markdown(size = 16), #change to element_blank() for grid plots!
         axis.title.y = ggtext::element_markdown(size=16),
         text = element_text(size=16))
