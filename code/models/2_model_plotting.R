@@ -42,7 +42,7 @@ labs.fdiv = (pretty(new.orig$floral_diversity, n=6))
 axis.fdiv =  standardize.axis(labs.fdiv,
                               new.orig$floral_diversity)
 
-labs.fabun = (pretty(new.orig$floral_abundance, n=6))
+labs.fabun = (pretty(new.orig$floral_abundance, n=4))
 axis.fabun =  standardize.axis(labs.fabun,
                                new.orig$floral_abundance)
 
@@ -50,7 +50,7 @@ labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=6))
 axis.blueberry =  standardize.axis(labs.blueberry,
                                    new.orig$prop_blueberry_500)
 
-labs.edge = (pretty(new.orig$prop_edge_500, n=6))
+labs.edge = (pretty(new.orig$prop_edge_500, n=4))
 axis.edge =  standardize.axis(labs.edge,
                               new.orig$prop_edge_500)
 
@@ -180,7 +180,7 @@ babun.doy =
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = native_bee_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.05, width = 0.05) +
-  labs(x = "Julian date", y = "Native *Bombus* abundance") +
+  labs(x = "Day of year", y = "Native *Bombus* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -213,7 +213,7 @@ labs.fdiv = (pretty(new.orig$floral_diversity, n=6))
 axis.fdiv =  standardize.axis(labs.fdiv,
                               new.orig$floral_diversity)
 
-labs.fabun = (pretty(new.orig$floral_abundance, n=6))
+labs.fabun = (pretty(new.orig$floral_abundance, n=4))
 axis.fabun =  standardize.axis(labs.fabun,
                                new.orig$floral_abundance)
 
@@ -221,7 +221,7 @@ labs.blueberry = (pretty(new.orig$prop_blueberry_500, n=6))
 axis.blueberry =  standardize.axis(labs.blueberry,
                                    new.orig$prop_blueberry_500)
 
-labs.edge = (pretty(new.orig$prop_edge_500, n=6))
+labs.edge = (pretty(new.orig$prop_edge_500, n=4))
 axis.edge =  standardize.axis(labs.edge,
                               new.orig$prop_edge_500)
 
@@ -363,7 +363,7 @@ brich.doy =
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = bombus_richness)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.2, width = 0.2) +
-  labs(x = "Julian date", y = "*Bombus* species richness") +
+  labs(x = "Day of year", y = "*Bombus* species richness") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -492,7 +492,7 @@ iabund.doy <-
   #plot raw data
   ggplot(new.net, aes(x = julian_date, y = impatiens_abundance)) +
   geom_jitter(cex = 2, alpha = 0.2, height = 0.05, width = 0.05) +
-  labs(x = "Julian date", y = "*B*. *impatiens* abundance") +
+  labs(x = "Day of year", y = "*B*. *impatiens* abundance") +
   theme_ms() +
   theme(legend.position = "none") +
   scale_x_continuous(
@@ -585,7 +585,7 @@ hascrith.doy =
             color = "darkorchid4") +
   
   # labels
-  labs(x = "Julian date", y = "*Crithidia spp.* prevalence") +
+  labs(x = "Day of year", y = "*Crithidia spp.* prevalence") +
   scale_x_continuous(breaks = axis.doy,
                      labels =  labs.doy) +
   ylim(c(0,1)) +
@@ -749,7 +749,7 @@ apicystis.doy =
   ylim(c(0,1)) +
   
   # labels
-  labs(x = "Julian date", y = "*Apicystis spp.* prevalence") +
+  labs(x = "Day of year", y = "*Apicystis spp.* prevalence") +
   scale_x_continuous(breaks = axis.doy,
                      labels =  labs.doy) +
   theme_ms() +
@@ -899,7 +899,7 @@ hasnosema.doy =
   ylim(c(0,1)) +
   
   # labels
-  labs(x = "Julian date", y = "*Vairimorpha spp.* prevalence") +
+  labs(x = "Day of year", y = "*Vairimorpha spp.* prevalence") +
   scale_x_continuous(breaks = axis.doy,
                      labels =  labs.doy) +
   theme_ms() +
